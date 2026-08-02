@@ -1,970 +1,959 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Uren Tracker - Secure & Offline Single-Page App for GitHub Pages</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- React 18 & ReactDOM CDN with Crossorigin -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
-
-  <!-- Babel Standalone CDN with Crossorigin -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
-
-  <!-- SheetJS (XLSX) CDN for Excel Export -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
-
-  <style>
-    /* Custom Scrollbar Styling */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Uren Tracker - Secure & Offline Single-Page App for GitHub Pages</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
+<style>
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+width: 6px;
+height: 6px;
+}
+::-webkit-scrollbar-track {
+background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+background: #cbd5e1;
+border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+background: #94a3b8;
+}
+</style>
 </head>
 <body class="bg-slate-100 text-slate-900 font-sans antialiased min-h-screen selection:bg-emerald-500 selection:text-white">
-  <div id="root"></div>
-
-  <!-- Application Script with Babel -->
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
-
-    // --- SVG ICON COMPONENTS ---
-    const IconClock = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-    );
-    const IconBuilding = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0h4m-4 0H7" /></svg>
-    );
-    const IconPlus = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-    );
-    const IconSparkles = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
-    );
-    const IconSettings = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-    );
-    const IconTrash = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-    );
-    const IconEdit = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-    );
-    const IconCheck = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-    );
-    const IconX = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-    );
-    const IconSend = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-    );
-    const IconShield = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-    );
-    const IconDownload = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-    );
-    const IconAlert = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-    );
-    const IconLock = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-    );
-    const IconEye = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-    );
-    const IconEyeOff = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.018 10.018 0 014.122-.963c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21M3 3l18 18" /></svg>
-    );
-    const IconFileSpreadsheet = ({ className = "w-4 h-4" }) => (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-    );
-
-    // --- LOCAL STORAGE KEYS & PRODUCTION DEFAULTS ---
-    const STORAGE_EMPLOYERS_KEY = 'uren_tracker_employers_v1';
-    const STORAGE_SHIFTS_KEY = 'uren_tracker_shifts_v1';
-    const STORAGE_SYNOLOGY_KEY = 'uren_tracker_synology_config_v1';
-    const STORAGE_SETTINGS_KEY = 'uren_tracker_settings_v1';
-
-    const DEFAULT_EMPLOYERS = [
-      { id: 'emp-1', name: 'Werkgever A', hourlyWage: 15.00, color: '#10B981', isDefault: true, notes: 'Hoofdbaan' },
-      { id: 'emp-2', name: 'Werkgever B', hourlyWage: 17.50, color: '#3B82F6', isDefault: false, notes: 'Bijbaan / Projecten' }
-    ];
-
-    const DEFAULT_SETTINGS = {
-      defaultBreakMinutes: 30,
-      defaultShiftDurationHours: 8,
-      lateCancellationHoursThreshold: 24,
-      currencySymbol: '€'
-    };
-
-    const DEFAULT_SYNOLOGY = {
-      apiUrl: '',
-      apiKey: '',
-      autoSyncOnSave: false
-    };
-
-    const SAMPLE_SHIFTS = [
-      {
-        id: 'shift-1',
-        employerId: 'emp-1',
-        date: new Date().toISOString().split('T')[0],
-        startTime: '08:30',
-        endTime: '17:00',
-        breakMinutes: 30,
-        surchargePercentage: 100,
-        notes: 'Dagdienst - Reguliere uren'
-      }
-    ];
-
-    // Storage utility functions
-    function loadEmployers() {
-      try {
-        const data = localStorage.getItem(STORAGE_EMPLOYERS_KEY);
-        return data ? JSON.parse(data) : DEFAULT_EMPLOYERS;
-      } catch (e) { return DEFAULT_EMPLOYERS; }
-    }
-
-    function saveEmployers(data) {
-      localStorage.setItem(STORAGE_EMPLOYERS_KEY, JSON.stringify(data));
-    }
-
-    function loadShifts() {
-      try {
-        const data = localStorage.getItem(STORAGE_SHIFTS_KEY);
-        return data ? JSON.parse(data) : SAMPLE_SHIFTS;
-      } catch (e) { return SAMPLE_SHIFTS; }
-    }
-
-    function saveShifts(data) {
-      localStorage.setItem(STORAGE_SHIFTS_KEY, JSON.stringify(data));
-    }
-
-    function loadAppSettings() {
-      try {
-        const data = localStorage.getItem(STORAGE_SETTINGS_KEY);
-        return data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : DEFAULT_SETTINGS;
-      } catch (e) { return DEFAULT_SETTINGS; }
-    }
-
-    function saveAppSettings(data) {
-      localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify(data));
-    }
-
-    function loadSynologyConfig() {
-      try {
-        const data = localStorage.getItem(STORAGE_SYNOLOGY_KEY);
-        return data ? { ...DEFAULT_SYNOLOGY, ...JSON.parse(data) } : DEFAULT_SYNOLOGY;
-      } catch (e) { return DEFAULT_SYNOLOGY; }
-    }
-
-    function saveSynologyConfig(data) {
-      localStorage.setItem(STORAGE_SYNOLOGY_KEY, JSON.stringify(data));
-    }
-
-    function parseTimeToMinutes(timeStr) {
-      if (!timeStr) return 0;
-      const [h, m] = timeStr.split(':').map(Number);
-      return (h || 0) * 60 + (m || 0);
-    }
-
-    function calculateShiftEarnings(shift, employers) {
-      const emp = employers.find(e => e.id === shift.employerId);
-      const wage = shift.hourlyWageOverride !== undefined ? shift.hourlyWageOverride : (emp ? emp.hourlyWage : 0);
-
-      const start = parseTimeToMinutes(shift.startTime);
-      let end = parseTimeToMinutes(shift.endTime);
-      if (end <= start) end += 24 * 60; // Nachtdienst
-
-      const totalMinutes = end - start;
-      const netMinutes = Math.max(0, totalMinutes - (shift.breakMinutes || 0));
-      const netHours = netMinutes / 60;
-
-      const multiplier = (shift.surchargePercentage || 100) / 100;
-      const earnings = netHours * wage * multiplier;
-
-      return { netHours, earnings, hourlyWageUsed: wage };
-    }
-
-    // --- EXCEL EXPORT HELPER (SheetJS / XLSX) ---
-    function exportToExcel(shifts, employers) {
-      if (typeof XLSX === 'undefined') {
-        alert('De Excel-bibliotheek (SheetJS) kon niet geladen worden. Controleer je internetverbinding.');
-        return;
-      }
-
-      const rows = shifts.map(shift => {
-        const emp = employers.find(e => e.id === shift.employerId);
-        const calc = calculateShiftEarnings(shift, employers);
-
-        return {
-          'Datum': shift.date,
-          'Werkgever / Klant': emp ? emp.name : 'Onbekend',
-          'Begintijd': shift.startTime,
-          'Eindtijd': shift.endTime,
-          'Pauze (minuten)': shift.breakMinutes || 0,
-          'Totaal Uren': Number(calc.netHours.toFixed(2)),
-          'Uurloon (€)': Number(calc.hourlyWageUsed.toFixed(2)),
-          'Totaal Verdient (€)': Number(calc.earnings.toFixed(2)),
-          'Locatie / Notitie': shift.notes || ''
-        };
-      });
-
-      const worksheet = XLSX.utils.json_to_sheet(rows);
-
-      // Kolombreedtes instellen voor een mooie weergave in Excel
-      worksheet['!cols'] = [
-        { wch: 12 }, // Datum
-        { wch: 20 }, // Werkgever / Klant
-        { wch: 10 }, // Begintijd
-        { wch: 10 }, // Eindtijd
-        { wch: 15 }, // Pauze (minuten)
-        { wch: 12 }, // Totaal Uren
-        { wch: 12 }, // Uurloon (€)
-        { wch: 18 }, // Totaal Verdient (€)
-        { wch: 30 }  // Locatie / Notitie
-      ];
-
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Urenoverzicht');
-
-      const today = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(workbook, `Urenoverzicht_${today}.xlsx`);
-    }
-
-    // --- MAIN APP COMPONENT ---
-    function App() {
-      const [employers, setEmployers] = useState(loadEmployers);
-      const [shifts, setShifts] = useState(loadShifts);
-      const [settings, setSettings] = useState(loadAppSettings);
-      const [synology, setSynology] = useState(loadSynologyConfig);
-
-      const [selectedEmployerId, setSelectedEmployerId] = useState('all');
-      const [activeTab, setActiveTab] = useState('overview');
-
-      // Modals
-      const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
-      const [editingShift, setEditingShift] = useState(null);
-      const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-      const [toast, setToast] = useState(null);
-
-      useEffect(() => { saveEmployers(employers); }, [employers]);
-      useEffect(() => { saveShifts(shifts); }, [shifts]);
-
-      const showToast = (msg) => {
-        setToast(msg);
-        setTimeout(() => setToast(null), 2500);
-      };
-
-      // Employers Handlers
-      const handleSaveEmployer = (emp) => {
-        setEmployers(prev => {
-          const exists = prev.some(e => e.id === emp.id);
-          if (exists) return prev.map(e => e.id === emp.id ? emp : e);
-          return [...prev, emp];
-        });
-        showToast(`Werkgever "${emp.name}" opgeslagen.`);
-      };
-
-      const handleDeleteEmployer = (id) => {
-        if (employers.length <= 1) return alert('Minimaal één werkgever vereist.');
-        setEmployers(prev => prev.filter(e => e.id !== id));
-        setShifts(prev => prev.filter(s => s.employerId !== id));
-        showToast('Werkgever verwijderd.');
-      };
-
-      const handleSetDefaultEmployer = (id) => {
-        setEmployers(prev => prev.map(e => ({ ...e, isDefault: e.id === id })));
-        showToast('Standaard werkgever bijgewerkt.');
-      };
-
-      // Shift Handlers
-      const handleSaveShift = (shift) => {
-        setShifts(prev => {
-          const exists = prev.some(s => s.id === shift.id);
-          if (exists) return prev.map(s => s.id === shift.id ? shift : s);
-          return [shift, ...prev];
-        });
-        setIsShiftModalOpen(false);
-        setEditingShift(null);
-        showToast('Dienst opgeslagen!');
-      };
-
-      const handleDeleteShift = (id) => {
-        setShifts(prev => prev.filter(s => s.id !== id));
-        showToast('Dienst verwijderd.');
-      };
-
-      // Total Reset Handler (Wipe All Local Storage Data)
-      const handleWipeAllData = () => {
-        localStorage.removeItem(STORAGE_EMPLOYERS_KEY);
-        localStorage.removeItem(STORAGE_SHIFTS_KEY);
-        localStorage.removeItem(STORAGE_SYNOLOGY_KEY);
-        localStorage.removeItem(STORAGE_SETTINGS_KEY);
-
-        setEmployers(DEFAULT_EMPLOYERS);
-        setShifts(SAMPLE_SHIFTS);
-        setSettings(DEFAULT_SETTINGS);
-        setSynology(DEFAULT_SYNOLOGY);
-        showToast('Alle gegevens zijn volledig gewist!');
-      };
-
-      // Filtered Shifts
-      const filteredShifts = shifts.filter(s => selectedEmployerId === 'all' || s.employerId === selectedEmployerId);
-
-      // Calculations
-      const totalStats = filteredShifts.reduce((acc, s) => {
-        const calc = calculateShiftEarnings(s, employers);
-        return {
-          hours: acc.hours + calc.netHours,
-          earnings: acc.earnings + calc.earnings
-        };
-      }, { hours: 0, earnings: 0 });
-
-      return (
-        <div className="max-w-lg mx-auto bg-white min-h-screen shadow-xl flex flex-col pb-20 relative border-x border-slate-200">
-          
-          {/* TOAST NOTIFICATION */}
-          {toast && (
-            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 animate-in fade-in">
-              <IconCheck className="w-4 h-4 text-emerald-400" />
-              <span>{toast}</span>
-            </div>
-          )}
-
-          {/* HEADER */}
-          <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-            <div className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-bold shadow-xs">
-                  <IconSparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h1 className="text-base font-bold text-slate-900">Uren Tracker</h1>
-                    <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-emerald-200/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      GitHub Pages HTTPS
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 font-medium">100% Lokaal & Privacy Vriendelijk</p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => { setEditingShift(null); setIsShiftModalOpen(true); }}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
-              >
-                <IconPlus className="w-4 h-4" />
-                <span>Nieuw</span>
-              </button>
-            </div>
-
-            {/* Sub Bar */}
-            <div className="bg-slate-50 px-4 py-2 border-t border-slate-100 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400 font-medium">Werkgever:</span>
-                <select
-                  value={selectedEmployerId}
-                  onChange={e => setSelectedEmployerId(e.target.value)}
-                  className="bg-white border border-slate-200 text-slate-800 text-xs font-bold py-1 px-2 rounded-lg"
-                >
-                  <option value="all">Alle werkgevers</option>
-                  {employers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
-
-              <button
-                onClick={() => setIsSettingsModalOpen(true)}
-                className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-lg flex items-center gap-1 hover:bg-emerald-100"
-              >
-                <IconSettings className="w-3.5 h-3.5" />
-                Instellingen
-              </button>
-            </div>
-          </header>
-
-          {/* CONTENT AREA */}
-          <main className="p-4 flex-1 space-y-4">
-            
-            {/* STATS OVERVIEW CARD */}
-            <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-md space-y-3">
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span>Totaal Overzicht</span>
-                <span className="bg-slate-800 px-2 py-0.5 rounded text-[10px] font-semibold text-slate-300">
-                  {filteredShifts.length} dienst(en)
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-3">
-                <div>
-                  <p className="text-[11px] text-slate-400 font-medium">Gewerkte Uren</p>
-                  <p className="text-2xl font-black text-emerald-400">{totalStats.hours.toFixed(1)} u</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 font-medium">Te ontvangen Loon</p>
-                  <p className="text-2xl font-black text-white">{settings.currencySymbol}{totalStats.earnings.toFixed(2)}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* SHIFTS LIST HEADER & EXCEL EXPORT BUTTON */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                <span>Geregistreerde Diensten</span>
-                <button
-                  onClick={() => exportToExcel(filteredShifts, employers)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-2xs transition-colors"
-                  title="Download alle diensten als Microsoft Excel bestand"
-                >
-                  <IconFileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>Exporteer naar Excel (.xlsx)</span>
-                </button>
-              </div>
-
-              {filteredShifts.length === 0 ? (
-                <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                  <IconClock className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-xs font-bold text-slate-600">Nog geen diensten ingevoerd</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Klik bovenaan op "+ Nieuw" om een dienst toe te voegen.</p>
-                </div>
-              ) : (
-                filteredShifts.map(shift => {
-                  const emp = employers.find(e => e.id === shift.employerId);
-                  const calc = calculateShiftEarnings(shift, employers);
-
-                  return (
-                    <div key={shift.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between hover:border-slate-300 transition-colors">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: emp?.color || '#10B981' }} />
-                          <span className="font-bold text-xs text-slate-800">{shift.date} · {emp?.name || 'Onbekend'}</span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          {shift.startTime} - {shift.endTime} ({calc.netHours.toFixed(1)} uur netto · {shift.breakMinutes}m pauze)
-                        </p>
-                        {shift.notes && <p className="text-[10px] text-slate-400 italic">{shift.notes}</p>}
-                      </div>
-
-                      <div className="text-right space-y-1">
-                        <p className="font-extrabold text-sm text-emerald-700">{settings.currencySymbol}{calc.earnings.toFixed(2)}</p>
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => { setEditingShift(shift); setIsShiftModalOpen(true); }}
-                            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded"
-                            title="Bewerken"
-                          >
-                            <IconEdit className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteShift(shift.id)}
-                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded"
-                            title="Verwijderen"
-                          >
-                            <IconTrash className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </main>
-
-          {/* BOTTOM BAR */}
-          <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg bg-white border-t border-slate-200 p-2 flex items-center justify-around z-30">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${activeTab === 'overview' ? 'text-emerald-600' : 'text-slate-400'}`}
-            >
-              <IconClock className="w-5 h-5" />
-              <span>Diensten</span>
-            </button>
-            <button
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-slate-400 hover:text-slate-600"
-            >
-              <IconSettings className="w-5 h-5" />
-              <span>Instellingen</span>
-            </button>
-          </footer>
-
-          {/* MODAL 1: ADD / EDIT SHIFT */}
-          {isShiftModalOpen && (
-            <ShiftModal
-              isOpen={isShiftModalOpen}
-              onClose={() => setIsShiftModalOpen(false)}
-              shift={editingShift}
-              employers={employers}
-              settings={settings}
-              onSave={handleSaveShift}
-            />
-          )}
-
-          {/* MODAL 2: FULL SETTINGS & WERKGEVERS & SYNOLOGY */}
-          {isSettingsModalOpen && (
-            <SettingsModal
-              isOpen={isSettingsModalOpen}
-              onClose={() => setIsSettingsModalOpen(false)}
-              employers={employers}
-              shifts={shifts}
-              settings={settings}
-              synology={synology}
-              onSaveEmployer={handleSaveEmployer}
-              onDeleteEmployer={handleDeleteEmployer}
-              onSetDefaultEmployer={handleSetDefaultEmployer}
-              onSaveSettings={(s) => { setSettings(s); saveAppSettings(s); showToast('Parameters opgeslagen!'); }}
-              onSaveSynology={(syn) => { setSynology(syn); saveSynologyConfig(syn); }}
-              onWipeData={handleWipeAllData}
-            />
-          )}
-        </div>
-      );
-    }
-
-    // --- SHIFT MODAL COMPONENT ---
-    function ShiftModal({ isOpen, onClose, shift, employers, settings, onSave }) {
-      const defaultEmp = employers.find(e => e.isDefault) || employers[0];
-
-      const [employerId, setEmployerId] = useState(shift ? shift.employerId : (defaultEmp ? defaultEmp.id : ''));
-      const [date, setDate] = useState(shift ? shift.date : new Date().toISOString().split('T')[0]);
-      const [startTime, setStartTime] = useState(shift ? shift.startTime : '09:00');
-      const [endTime, setEndTime] = useState(shift ? shift.endTime : '17:00');
-      const [breakMinutes, setBreakMinutes] = useState(shift ? shift.breakMinutes : settings.defaultBreakMinutes);
-      const [wageOverride, setWageOverride] = useState(shift && shift.hourlyWageOverride !== undefined ? shift.hourlyWageOverride.toString() : '');
-      const [notes, setNotes] = useState(shift ? shift.notes || '' : '');
-
-      const handleSubmit = (e) => {
-        e.preventDefault();
-        const newShift = {
-          id: shift ? shift.id : `shift-${Date.now()}`,
-          employerId,
-          date,
-          startTime,
-          endTime,
-          breakMinutes: parseInt(breakMinutes) || 0,
-          hourlyWageOverride: wageOverride ? parseFloat(wageOverride) : undefined,
-          notes
-        };
-        onSave(newShift);
-      };
-
-      return (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-4 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h2 className="font-bold text-base text-slate-900">{shift ? 'Dienst Aanpassen' : 'Nieuwe Dienst Invoeren'}</h2>
-              <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><IconX className="w-5 h-5" /></button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Werkgever</label>
-                <select
-                  value={employerId}
-                  onChange={e => setEmployerId(e.target.value)}
-                  className="w-full bg-slate-50 border rounded-xl p-2 font-bold"
-                >
-                  {employers.map(e => <option key={e.id} value={e.id}>{e.name} (€{e.hourlyWage.toFixed(2)}/u)</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Datum</label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" required />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Begintijd</label>
-                  <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" required />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Eindtijd</label>
-                  <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" required />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Pauze (minuten)</label>
-                  <input type="number" value={breakMinutes} onChange={e => setBreakMinutes(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Aangepast Uurloon (€)</label>
-                  <input type="number" step="0.10" placeholder="Standaard" value={wageOverride} onChange={e => setWageOverride(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Opmerking</label>
-                <input type="text" placeholder="bv. Toeslag uren, Locatie X" value={notes} onChange={e => setNotes(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-medium" />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t">
-                <button type="button" onClick={onClose} className="px-4 py-2 font-semibold text-slate-500">Annuleren</button>
-                <button type="submit" className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-xl font-bold">Opslaan</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      );
-    }
-
-    // --- SETTINGS & SYNOLOGY MODAL WITH HTTPS & PRIVACY COMPLIANCE ---
-    function SettingsModal({
-      isOpen, onClose, employers, shifts, settings, synology,
-      onSaveEmployer, onDeleteEmployer, onSetDefaultEmployer, onSaveSettings, onSaveSynology, onWipeData
-    }) {
-      const [tab, setTab] = useState('employers'); // employers, params, synology, data
-      
-      // Employer form
-      const [empName, setEmpName] = useState('');
-      const [empWage, setEmpWage] = useState('15.00');
-      const [editingEmpId, setEditingEmpId] = useState(null);
-
-      // Synology form with HTTPS validation & Show/Hide Key toggle
-      const [synUrl, setSynUrl] = useState(synology.apiUrl || '');
-      const [synKey, setSynKey] = useState(synology.apiKey || '');
-      const [showApiKey, setShowApiKey] = useState(false);
-      const [synStatus, setSynStatus] = useState(null);
-      const [sending, setSending] = useState(false);
-
-      // Params form
-      const [breakMins, setBreakMins] = useState(settings.defaultBreakMinutes);
-      const [currency, setCurrency] = useState(settings.currencySymbol);
-
-      // Confirm Wipe Modal State
-      const [showConfirmWipe, setShowConfirmWipe] = useState(false);
-
-      const handleSaveEmp = (e) => {
-        e.preventDefault();
-        if (!empName.trim()) return;
-        onSaveEmployer({
-          id: editingEmpId || `emp-${Date.now()}`,
-          name: empName.trim(),
-          hourlyWage: parseFloat(empWage) || 15.0,
-          color: '#10B981',
-          isDefault: employers.length === 0
-        });
-        setEmpName('');
-        setEmpWage('15.00');
-        setEditingEmpId(null);
-      };
-
-      // HTTPS Check for GitHub Pages / Mixed Content prevention
-      const handleSendSynology = async () => {
-        const trimmedUrl = synUrl.trim();
-        
-        if (!trimmedUrl) {
-          return setSynStatus({ success: false, message: 'Vul a.u.b. een Synology API-url in.' });
-        }
-
-        // Strict HTTPS Enforcement for GitHub Pages
-        if (trimmedUrl.startsWith('http://')) {
-          return setSynStatus({
-            success: false,
-            message: '⚠️ GitHub Pages vereist HTTPS! Onbeveiligde HTTP-verzoeken worden door de browser geblokkeerd (Mixed Content Block). Gebruik een HTTPS-URL (bijv. via Synology QuickConnect / DDNS met SSL).'
-          });
-        }
-
-        if (!trimmedUrl.startsWith('https://')) {
-          return setSynStatus({
-            success: false,
-            message: 'Vul een geldige HTTPS-URL in die begint met https://'
-          });
-        }
-
-        setSending(true);
-        setSynStatus(null);
-
-        const config = { apiUrl: trimmedUrl, apiKey: synKey.trim() };
-        onSaveSynology(config);
-
-        try {
-          const payload = { app: 'UrenTracker', version: '1.0', totalShifts: shifts.length, employers, shifts };
-          const headers = { 'Content-Type': 'application/json' };
-          if (config.apiKey) headers['X-API-Key'] = config.apiKey;
-
-          const res = await fetch(config.apiUrl, { method: 'POST', headers, body: JSON.stringify(payload) });
-          setSending(false);
-          if (res.ok) {
-            setSynStatus({ success: true, message: `Succesvol versleuteld verzonden naar Synology NAS (${res.status})!` });
-          } else {
-            setSynStatus({ success: false, message: `NAS gaf statuscode ${res.status}. Controleer de URL en instellingen.` });
-          }
-        } catch (err) {
-          setSending(false);
-          setSynStatus({
-            success: false,
-            message: `Verbindingsfout (${err.message || 'Netwerkfout'}). Zorg dat je Synology NAS CORS-verzoeken toestaat en een geldig SSL-certificaat heeft.`
-          });
-        }
-      };
-
-      // Download JSON Backup
-      const downloadJSON = () => {
-        const jsonStr = JSON.stringify({ employers, shifts, settings }, null, 2);
-        const blob = new Blob([jsonStr], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `uren-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-      };
-
-      return (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden relative">
-            
-            {/* Header */}
-            <div className="p-4 border-b flex items-center justify-between bg-white">
-              <div className="flex items-center gap-2">
-                <IconSettings className="w-5 h-5 text-emerald-600" />
-                <h2 className="font-bold text-base text-slate-900">Instellingen & Privacy Beheer</h2>
-              </div>
-              <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><IconX className="w-5 h-5" /></button>
-            </div>
-
-            {/* Tabs */}
-            <div className="bg-slate-50 p-2 border-b grid grid-cols-4 gap-1 text-center text-xs font-bold">
-              <button onClick={() => setTab('employers')} className={`py-1.5 rounded-lg ${tab === 'employers' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'}`}>Werkgevers</button>
-              <button onClick={() => setTab('params')} className={`py-1.5 rounded-lg ${tab === 'params' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'}`}>Parameters</button>
-              <button onClick={() => setTab('synology')} className={`py-1.5 rounded-lg ${tab === 'synology' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'}`}>Synology NAS</button>
-              <button onClick={() => setTab('data')} className={`py-1.5 rounded-lg ${tab === 'data' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'}`}>Data & AVG</button>
-            </div>
-
-            {/* Content */}
-            <div className="p-4 overflow-y-auto space-y-4 flex-1 text-xs">
-              
-              {/* TAB 1: WERKGEVERS */}
-              {tab === 'employers' && (
-                <div className="space-y-3">
-                  <form onSubmit={handleSaveEmp} className="bg-slate-50 p-3 rounded-xl border space-y-2">
-                    <p className="font-bold text-slate-800">{editingEmpId ? 'Werkgever bewerken' : 'Nieuwe Werkgever Toevoegen'}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input type="text" placeholder="Naam werkgever" value={empName} onChange={e => setEmpName(e.target.value)} className="bg-white border rounded-lg p-2 font-semibold" required />
-                      <input type="number" step="0.10" placeholder="Uurloon (€)" value={empWage} onChange={e => setEmpWage(e.target.value)} className="bg-white border rounded-lg p-2 font-semibold" required />
-                    </div>
-                    <button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-1.5 rounded-lg">Opslaan</button>
-                  </form>
-
-                  <div className="space-y-2">
-                    {employers.map(emp => (
-                      <div key={emp.id} className="p-2.5 bg-slate-50 border rounded-xl flex items-center justify-between">
-                        <div>
-                          <span className="font-bold text-slate-800">{emp.name}</span>
-                          <p className="text-[11px] text-slate-500">€{emp.hourlyWage.toFixed(2)} / uur {emp.isDefault && '· Standaard'}</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {!emp.isDefault && (
-                            <button onClick={() => onSetDefaultEmployer(emp.id)} className="text-[10px] font-bold bg-white border px-2 py-1 rounded">Standaard</button>
-                          )}
-                          <button onClick={() => { setEditingEmpId(emp.id); setEmpName(emp.name); setEmpWage(emp.hourlyWage.toString()); }} className="p-1 text-slate-400 hover:text-slate-700"><IconEdit className="w-4 h-4" /></button>
-                          <button onClick={() => onDeleteEmployer(emp.id)} className="p-1 text-slate-400 hover:text-rose-600"><IconTrash className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: PARAMETERS */}
-              {tab === 'params' && (
-                <div className="space-y-3">
-                  <div className="space-y-2 bg-slate-50 p-3 rounded-xl border">
-                    <label className="block font-bold">Standaard Pauze (minuten)</label>
-                    <input type="number" value={breakMins} onChange={e => setBreakMins(parseInt(e.target.value) || 0)} className="w-full bg-white border rounded-lg p-2 font-semibold" />
-                  </div>
-                  <div className="space-y-2 bg-slate-50 p-3 rounded-xl border">
-                    <label className="block font-bold">Valuta Symbool</label>
-                    <input type="text" value={currency} onChange={e => setCurrency(e.target.value)} className="w-full bg-white border rounded-lg p-2 font-semibold" />
-                  </div>
-                  <button onClick={() => onSaveSettings({ ...settings, defaultBreakMinutes: breakMins, currencySymbol: currency })} className="w-full bg-emerald-500 text-white font-bold py-2 rounded-xl">Parameters Opslaan</button>
-                </div>
-              )}
-
-              {/* TAB 3: SYNOLOGY NAS WITH HTTPS ENFORCEMENT & EYE TOGGLE */}
-              {tab === 'synology' && (
-                <div className="space-y-3">
-                  <div className="bg-emerald-50/60 border border-emerald-200 p-3 rounded-xl space-y-1">
-                    <div className="flex items-center gap-1.5 font-bold text-emerald-800 text-xs">
-                      <IconShield className="w-4 h-4 text-emerald-600" />
-                      <span>HTTPS Verbinding (GitHub Pages)</span>
-                    </div>
-                    <p className="text-[11px] text-emerald-700">
-                      Omdat deze app via HTTPS op GitHub Pages draait, staat de browser alleen beveiligde `https://` verzoeken toe om Mixed Content blokkades te voorkomen.
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 p-3 rounded-xl border space-y-3">
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">Synology HTTPS Endpoint URL *</label>
-                      <input
-                        type="url"
-                        placeholder="https://nas.example.com:5001/api/uren"
-                        value={synUrl}
-                        onChange={e => setSynUrl(e.target.value)}
-                        className="w-full bg-white border rounded-lg p-2 font-semibold focus:ring-2 focus:ring-emerald-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">API Sleutel / Authorization Token</label>
-                      <div className="relative">
-                        <input
-                          type={showApiKey ? "text" : "password"}
-                          placeholder="Optioneel geheim token"
-                          value={synKey}
-                          onChange={e => setSynKey(e.target.value)}
-                          className="w-full bg-white border rounded-lg p-2 pr-10 font-semibold focus:ring-2 focus:ring-emerald-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
-                          title={showApiKey ? "Verberg sleutel" : "Toon sleutel"}
-                        >
-                          {showApiKey ? <IconEyeOff className="w-4 h-4" /> : <IconEye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleSendSynology}
-                    disabled={sending}
-                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-xs"
-                  >
-                    <IconSend className="w-4 h-4" />
-                    {sending ? 'Bezig met beveiligd verzenden...' : 'Verstuur nu naar Synology NAS'}
-                  </button>
-
-                  {synStatus && (
-                    <div className={`p-3 rounded-xl text-xs font-semibold leading-relaxed ${synStatus.success ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
-                      {synStatus.message}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 4: DATA & PRIVACY CONTROL (AVG/GDPR) */}
-              {tab === 'data' && (
-                <div className="space-y-4">
-                  {/* Privacy Statement Banner */}
-                  <div className="bg-slate-900 text-white p-3.5 rounded-xl space-y-1.5">
-                    <div className="flex items-center gap-2 font-bold text-emerald-400">
-                      <IconLock className="w-4 h-4" />
-                      <span>Privacy & AVG (GDPR) Garantie</span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      Alle geregistreerde uren, tarieven en instellingen worden <strong>100% lokaal in jouw eigen browser (LocalStorage)</strong> opgeslagen. Er worden geen analytische cookies of gegevens naar externe servers verstuurd.
-                    </p>
-                  </div>
-
-                  {/* Export Options */}
-                  <div className="bg-slate-50 border p-3 rounded-xl space-y-2">
-                    <p className="font-bold text-slate-800">Exporteer & Backup Opties</p>
-                    <div className="grid grid-cols-1 gap-2">
-                      <button
-                        onClick={() => exportToExcel(shifts, employers)}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 shadow-2xs transition-colors"
-                      >
-                        <IconFileSpreadsheet className="w-4 h-4" />
-                        <span>Exporteer naar Excel (.xlsx)</span>
-                      </button>
-                      <button
-                        onClick={downloadJSON}
-                        className="w-full bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold py-2 rounded-lg flex items-center justify-center gap-2 shadow-2xs"
-                      >
-                        <IconDownload className="w-4 h-4 text-emerald-600" />
-                        <span>Download JSON Backup</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Wipe Data Section */}
-                  <div className="bg-rose-50 border border-rose-200 p-3 rounded-xl space-y-2">
-                    <div className="flex items-center gap-1.5 text-rose-800 font-bold">
-                      <IconAlert className="w-4 h-4 text-rose-600" />
-                      <span>Data Beheer & Verwijdering</span>
-                    </div>
-                    <p className="text-[11px] text-rose-700">
-                      Wil je een schone start maken of al je persoonsgegevens uit de browser wissen?
-                    </p>
-                    <button
-                      onClick={() => setShowConfirmWipe(true)}
-                      className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                    >
-                      <IconTrash className="w-4 h-4" />
-                      <span>Alle gegevens definitief wissen</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-3 bg-slate-50 border-t flex justify-end">
-              <button onClick={onClose} className="bg-white border text-slate-700 font-bold px-4 py-1.5 rounded-xl">Sluiten</button>
-            </div>
-
-            {/* CONFIRM WIPE SUB-MODAL */}
-            {showConfirmWipe && (
-              <div className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-                <div className="bg-white rounded-2xl p-4 max-w-xs w-full space-y-3 text-center shadow-2xl border border-slate-200">
-                  <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
-                    <IconAlert className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-slate-900 text-sm">Weet je het zeker?</h3>
-                  <p className="text-xs text-slate-500">
-                    Dit verwijdert onherroepelijk alle geregistreerde diensten, werkgevers en instellingen uit LocalStorage.
-                  </p>
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={() => setShowConfirmWipe(false)}
-                      className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs"
-                    >
-                      Annuleren
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowConfirmWipe(false);
-                        onWipeData();
-                        onClose();
-                      }}
-                      className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-xl text-xs"
-                    >
-                      Ja, alles wissen
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-      );
-    }
-
-    // Render the React App
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// --- SVG ICON COMPONENTS ---
+const IconClock = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+);
+const IconBuilding = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0h4m-4 0H7" /></svg>
+);
+const IconPlus = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+);
+const IconSparkles = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+);
+const IconSettings = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+);
+const IconTrash = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+);
+const IconEdit = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+);
+const IconCheck = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+);
+const IconX = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+);
+const IconSend = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+);
+const IconShield = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+);
+const IconDownload = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+);
+const IconAlert = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+);
+const IconLock = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+);
+const IconEye = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+);
+const IconEyeOff = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.018 10.018 0 014.122-.963c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21M3 3l18 18" /></svg>
+);
+const IconFileSpreadsheet = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+);
+
+// --- LOCAL STORAGE KEYS & PRODUCTION DEFAULTS ---
+const STORAGE_EMPLOYERS_KEY = 'uren_tracker_employers_v1';
+const STORAGE_SHIFTS_KEY = 'uren_tracker_shifts_v1';
+const STORAGE_SYNOLOGY_KEY = 'uren_tracker_synology_config_v1';
+const STORAGE_SETTINGS_KEY = 'uren_tracker_settings_v1';
+
+const DEFAULT_EMPLOYERS = [
+{ id: 'emp-1', name: 'Werkgever A', hourlyWage: 15.00, color: '#10B981', isDefault: true, notes: 'Hoofdbaan' },
+{ id: 'emp-2', name: 'Werkgever B', hourlyWage: 17.50, color: '#3B82F6', isDefault: false, notes: 'Bijbaan / Projecten' }
+];
+
+const DEFAULT_SETTINGS = {
+defaultBreakMinutes: 30,
+defaultShiftDurationHours: 8,
+lateCancellationHoursThreshold: 24,
+currencySymbol: '€'
+};
+
+const DEFAULT_SYNOLOGY = {
+apiUrl: '',
+apiKey: '',
+autoSyncOnSave: false
+};
+
+const SAMPLE_SHIFTS = [
+{
+id: 'shift-1',
+employerId: 'emp-1',
+date: new Date().toISOString().split('T')[0],
+startTime: '08:30',
+endTime: '17:00',
+breakMinutes: 30,
+surchargePercentage: 100,
+notes: 'Dagdienst - Reguliere uren'
+}
+];
+
+// Storage utility functions
+function loadEmployers() {
+try {
+const data = localStorage.getItem(STORAGE_EMPLOYERS_KEY);
+return data ? JSON.parse(data) : DEFAULT_EMPLOYERS;
+} catch (e) { return DEFAULT_EMPLOYERS; }
+}
+
+function saveEmployers(data) {
+localStorage.setItem(STORAGE_EMPLOYERS_KEY, JSON.stringify(data));
+}
+
+function loadShifts() {
+try {
+const data = localStorage.getItem(STORAGE_SHIFTS_KEY);
+return data ? JSON.parse(data) : SAMPLE_SHIFTS;
+} catch (e) { return SAMPLE_SHIFTS; }
+}
+
+function saveShifts(data) {
+localStorage.setItem(STORAGE_SHIFTS_KEY, JSON.stringify(data));
+}
+
+function loadAppSettings() {
+try {
+const data = localStorage.getItem(STORAGE_SETTINGS_KEY);
+return data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : DEFAULT_SETTINGS;
+} catch (e) { return DEFAULT_SETTINGS; }
+}
+
+function saveAppSettings(data) {
+localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify(data));
+}
+
+function loadSynologyConfig() {
+try {
+const data = localStorage.getItem(STORAGE_SYNOLOGY_KEY);
+return data ? { ...DEFAULT_SYNOLOGY, ...JSON.parse(data) } : DEFAULT_SYNOLOGY;
+} catch (e) { return DEFAULT_SYNOLOGY; }
+}
+
+function saveSynologyConfig(data) {
+localStorage.setItem(STORAGE_SYNOLOGY_KEY, JSON.stringify(data));
+}
+
+function parseTimeToMinutes(timeStr) {
+if (!timeStr) return 0;
+const [h, m] = timeStr.split(':').map(Number);
+return (h || 0) * 60 + (m || 0);
+}
+
+function calculateShiftEarnings(shift, employers) {
+const emp = employers.find(e => e.id === shift.employerId);
+const wage = shift.hourlyWageOverride !== undefined ? shift.hourlyWageOverride : (emp ? emp.hourlyWage : 0);
+
+const start = parseTimeToMinutes(shift.startTime);
+let end = parseTimeToMinutes(shift.endTime);
+if (end <= start) end += 24 * 60; // Nachtdienst
+
+const totalMinutes = end - start;
+const netMinutes = Math.max(0, totalMinutes - (shift.breakMinutes || 0));
+const netHours = netMinutes / 60;
+
+const multiplier = (shift.surchargePercentage || 100) / 100;
+const earnings = netHours * wage * multiplier;
+
+return { netHours, earnings, hourlyWageUsed: wage };
+}
+
+// --- EXCEL EXPORT HELPER (SheetJS / XLSX) ---
+function exportToExcel(shifts, employers) {
+if (typeof XLSX === 'undefined') {
+alert('De Excel-bibliotheek (SheetJS) kon niet geladen worden. Controleer je internetverbinding.');
+return;
+}
+
+const rows = shifts.map(shift => {
+const emp = employers.find(e => e.id === shift.employerId);
+const calc = calculateShiftEarnings(shift, employers);
+
+return {
+'Datum': shift.date,
+'Werkgever / Klant': emp ? emp.name : 'Onbekend',
+'Begintijd': shift.startTime,
+'Eindtijd': shift.endTime,
+'Pauze (minuten)': shift.breakMinutes || 0,
+'Totaal Uren': Number(calc.netHours.toFixed(2)),
+'Uurloon (€)': Number(calc.hourlyWageUsed.toFixed(2)),
+'Totaal Verdient (€)': Number(calc.earnings.toFixed(2)),
+'Locatie / Notitie': shift.notes || ''
+};
+});
+
+const worksheet = XLSX.utils.json_to_sheet(rows);
+
+// Kolombreedtes instellen voor een mooie weergave in Excel
+worksheet['!cols'] = [
+{ wch: 12 }, // Datum
+{ wch: 20 }, // Werkgever / Klant
+{ wch: 10 }, // Begintijd
+{ wch: 10 }, // Eindtijd
+{ wch: 15 }, // Pauze (minuten)
+{ wch: 12 }, // Totaal Uren
+{ wch: 12 }, // Uurloon (€)
+{ wch: 18 }, // Totaal Verdient (€)
+{ wch: 30 } // Locatie / Notitie
+];
+
+const workbook = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(workbook, worksheet, 'Urenoverzicht');
+
+const today = new Date().toISOString().split('T')[0];
+XLSX.writeFile(workbook, `Urenoverzicht_${today}.xlsx`);
+}
+
+// --- MAIN APP COMPONENT ---
+function App() {
+const [employers, setEmployers] = useState(loadEmployers);
+const [shifts, setShifts] = useState(loadShifts);
+const [settings, setSettings] = useState(loadAppSettings);
+const [synology, setSynology] = useState(loadSynologyConfig);
+
+const [selectedEmployerId, setSelectedEmployerId] = useState('all');
+const [activeTab, setActiveTab] = useState('overview');
+
+// Modals
+const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+const [editingShift, setEditingShift] = useState(null);
+const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+const [toast, setToast] = useState(null);
+
+useEffect(() => { saveEmployers(employers); }, [employers]);
+useEffect(() => { saveShifts(shifts); }, [shifts]);
+
+const showToast = (msg) => {
+setToast(msg);
+setTimeout(() => setToast(null), 2500);
+};
+
+// Employers Handlers
+const handleSaveEmployer = (emp) => {
+setEmployers(prev => {
+const exists = prev.some(e => e.id === emp.id);
+if (exists) return prev.map(e => e.id === emp.id ? emp : e);
+return [...prev, emp];
+});
+showToast(`Werkgever "${emp.name}" opgeslagen.`);
+};
+
+const handleDeleteEmployer = (id) => {
+if (employers.length <= 1) return alert('Minimaal één werkgever vereist.');
+setEmployers(prev => prev.filter(e => e.id !== id));
+setShifts(prev => prev.filter(s => s.employerId !== id));
+showToast('Werkgever verwijderd.');
+};
+
+const handleSetDefaultEmployer = (id) => {
+setEmployers(prev => prev.map(e => ({ ...e, isDefault: e.id === id })));
+showToast('Standaard werkgever bijgewerkt.');
+};
+
+// Shift Handlers
+const handleSaveShift = (shift) => {
+setShifts(prev => {
+const exists = prev.some(s => s.id === shift.id);
+if (exists) return prev.map(s => s.id === shift.id ? shift : s);
+return [shift, ...prev];
+});
+setIsShiftModalOpen(false);
+setEditingShift(null);
+showToast('Dienst opgeslagen!');
+};
+
+const handleDeleteShift = (id) => {
+setShifts(prev => prev.filter(s => s.id !== id));
+showToast('Dienst verwijderd.');
+};
+
+// Total Reset Handler (Wipe All Local Storage Data)
+const handleWipeAllData = () => {
+localStorage.removeItem(STORAGE_EMPLOYERS_KEY);
+localStorage.removeItem(STORAGE_SHIFTS_KEY);
+localStorage.removeItem(STORAGE_SYNOLOGY_KEY);
+localStorage.removeItem(STORAGE_SETTINGS_KEY);
+
+setEmployers(DEFAULT_EMPLOYERS);
+setShifts(SAMPLE_SHIFTS);
+setSettings(DEFAULT_SETTINGS);
+setSynology(DEFAULT_SYNOLOGY);
+showToast('Alle gegevens zijn volledig gewist!');
+};
+
+// Filtered Shifts
+const filteredShifts = shifts.filter(s => selectedEmployerId === 'all' || s.employerId === selectedEmployerId);
+
+// Calculations
+const totalStats = filteredShifts.reduce((acc, s) => {
+const calc = calculateShiftEarnings(s, employers);
+return {
+hours: acc.hours + calc.netHours,
+earnings: acc.earnings + calc.earnings
+};
+}, { hours: 0, earnings: 0 });
+
+return (
+<div className="max-w-lg mx-auto bg-white min-h-screen shadow-xl flex flex-col pb-20 relative border-x border-slate-200">
+
+{/* TOAST NOTIFICATION */}
+{toast && (
+<div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 animate-in fade-in">
+<IconCheck className="w-4 h-4 text-emerald-400" />
+<span>{toast}</span>
+</div>
+)}
+
+{/* HEADER */}
+<header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+<div className="p-4 flex items-center justify-between">
+<div className="flex items-center gap-2.5">
+<div className="w-9 h-9 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-bold shadow-xs">
+<IconSparkles className="w-5 h-5" />
+</div>
+<div>
+<div className="flex items-center gap-1.5">
+<h1 className="text-base font-bold text-slate-900">Uren Tracker</h1>
+<span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-emerald-200/80">
+<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+GitHub Pages HTTPS
+</span>
+</div>
+<p className="text-[11px] text-slate-400 font-medium">100% Lokaal & Privacy Vriendelijk</p>
+</div>
+</div>
+
+<button
+onClick={() => { setEditingShift(null); setIsShiftModalOpen(true); }}
+className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
+>
+<IconPlus className="w-4 h-4" />
+<span>Nieuw</span>
+</button>
+</div>
+
+{/* Sub Bar */}
+<div className="bg-slate-50 px-4 py-2 border-t border-slate-100 flex items-center justify-between text-xs">
+<div className="flex items-center gap-2">
+<span className="text-slate-400 font-medium">Werkgever:</span>
+<select
+value={selectedEmployerId}
+onChange={e => setSelectedEmployerId(e.target.value)}
+className="bg-white border border-slate-200 text-slate-800 text-xs font-bold py-1 px-2 rounded-lg"
+>
+<option value="all">Alle werkgevers</option>
+{employers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+</select>
+</div>
+
+<button
+onClick={() => setIsSettingsModalOpen(true)}
+className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-lg flex items-center gap-1 hover:bg-emerald-100"
+>
+<IconSettings className="w-3.5 h-3.5" />
+Instellingen
+</button>
+</div>
+</header>
+
+{/* CONTENT AREA */}
+<main className="p-4 flex-1 space-y-4">
+
+{/* STATS OVERVIEW CARD */}
+<div className="bg-slate-900 text-white rounded-2xl p-4 shadow-md space-y-3">
+<div className="flex items-center justify-between text-xs text-slate-400">
+<span>Totaal Overzicht</span>
+<span className="bg-slate-800 px-2 py-0.5 rounded text-[10px] font-semibold text-slate-300">
+{filteredShifts.length} dienst(en)
+</span>
+</div>
+<div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-3">
+<div>
+<p className="text-[11px] text-slate-400 font-medium">Gewerkte Uren</p>
+<p className="text-2xl font-black text-emerald-400">{totalStats.hours.toFixed(1)} u</p>
+</div>
+<div>
+<p className="text-[11px] text-slate-400 font-medium">Te ontvangen Loon</p>
+<p className="text-2xl font-black text-white">{settings.currencySymbol}{totalStats.earnings.toFixed(2)}</p>
+</div>
+</div>
+</div>
+
+{/* SHIFTS LIST HEADER & EXCEL EXPORT BUTTON */}
+<div className="space-y-2">
+<div className="flex items-center justify-between text-xs font-bold text-slate-700">
+<span>Geregistreerde Diensten</span>
+<button
+onClick={() => exportToExcel(filteredShifts, employers)}
+className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-2xs transition-colors"
+title="Download alle diensten als Microsoft Excel bestand"
+>
+<IconFileSpreadsheet className="w-3.5 h-3.5" />
+<span>Exporteer naar Excel (.xlsx)</span>
+</button>
+</div>
+
+{filteredShifts.length === 0 ? (
+<div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+<IconClock className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+<p className="text-xs font-bold text-slate-600">Nog geen diensten ingevoerd</p>
+<p className="text-[11px] text-slate-400 mt-0.5">Klik bovenaan op "+ Nieuw" om een dienst toe te voegen.</p>
+</div>
+) : (
+filteredShifts.map(shift => {
+const emp = employers.find(e => e.id === shift.employerId);
+const calc = calculateShiftEarnings(shift, employers);
+
+return (
+<div key={shift.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between hover:border-slate-300 transition-colors">
+<div className="space-y-1">
+<div className="flex items-center gap-2">
+<span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: emp?.color || '#10B981' }} />
+<span className="font-bold text-xs text-slate-800">{shift.date} · {emp?.name || 'Onbekend'}</span>
+</div>
+<p className="text-[11px] text-slate-500 font-medium">
+{shift.startTime} - {shift.endTime} ({calc.netHours.toFixed(1)} uur netto · {shift.breakMinutes}m pauze)
+</p>
+{shift.notes && <p className="text-[10px] text-slate-400 italic">{shift.notes}</p>}
+</div>
+
+<div className="text-right space-y-1">
+<p className="font-extrabold text-sm text-emerald-700">{settings.currencySymbol}{calc.earnings.toFixed(2)}</p>
+<div className="flex items-center justify-end gap-1">
+<button
+onClick={() => { setEditingShift(shift); setIsShiftModalOpen(true); }}
+className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded"
+title="Bewerken"
+>
+<IconEdit className="w-3.5 h-3.5" />
+</button>
+<button
+onClick={() => handleDeleteShift(shift.id)}
+className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded"
+title="Verwijderen"
+>
+<IconTrash className="w-3.5 h-3.5" />
+</button>
+</div>
+</div>
+</div>
+);
+})
+)}
+</div>
+</main>
+
+{/* BOTTOM BAR */}
+<footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg bg-white border-t border-slate-200 p-2 flex items-center justify-around z-30">
+<button
+onClick={() => setActiveTab('overview')}
+className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${activeTab === 'overview' ? 'text-emerald-600' : 'text-slate-400'}`}
+>
+<IconClock className="w-5 h-5" />
+<span>Diensten</span>
+</button>
+<button
+onClick={() => setIsSettingsModalOpen(true)}
+className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-slate-400 hover:text-slate-600"
+>
+<IconSettings className="w-5 h-5" />
+<span>Instellingen</span>
+</button>
+</footer>
+
+{/* MODAL 1: ADD / EDIT SHIFT */}
+{isShiftModalOpen && (
+<ShiftModal
+isOpen={isShiftModalOpen}
+onClose={() => setIsShiftModalOpen(false)}
+shift={editingShift}
+employers={employers}
+settings={settings}
+onSave={handleSaveShift}
+/>
+)}
+
+{/* MODAL 2: FULL SETTINGS & WERKGEVERS & SYNOLOGY */}
+{isSettingsModalOpen && (
+<SettingsModal
+isOpen={isSettingsModalOpen}
+onClose={() => setIsSettingsModalOpen(false)}
+employers={employers}
+shifts={shifts}
+settings={settings}
+synology={synology}
+onSaveEmployer={handleSaveEmployer}
+onDeleteEmployer={handleDeleteEmployer}
+onSetDefaultEmployer={handleSetDefaultEmployer}
+onSaveSettings={(s) => { setSettings(s); saveAppSettings(s); showToast('Parameters opgeslagen!'); }}
+onSaveSynology={(syn) => { setSynology(syn); saveSynologyConfig(syn); }}
+onWipeData={handleWipeAllData}
+/>
+)}
+</div>
+);
+}
+
+// --- SHIFT MODAL COMPONENT ---
+function ShiftModal({ isOpen, onClose, shift, employers, settings, onSave }) {
+const defaultEmp = employers.find(e => e.isDefault) || employers[0];
+
+const [employerId, setEmployerId] = useState(shift ? shift.employerId : (defaultEmp ? defaultEmp.id : ''));
+const [date, setDate] = useState(shift ? shift.date : new Date().toISOString().split('T')[0]);
+const [startTime, setStartTime] = useState(shift ? shift.startTime : '09:00');
+const [endTime, setEndTime] = useState(shift ? shift.endTime : '17:00');
+const [breakMinutes, setBreakMinutes] = useState(shift ? shift.breakMinutes : settings.defaultBreakMinutes);
+const [wageOverride, setWageOverride] = useState(shift && shift.hourlyWageOverride !== undefined ? shift.hourlyWageOverride.toString() : '');
+const [notes, setNotes] = useState(shift ? shift.notes || '' : '');
+
+const handleSubmit = (e) => {
+e.preventDefault();
+const newShift = {
+id: shift ? shift.id : `shift-${Date.now()}`,
+employerId,
+date,
+startTime,
+endTime,
+breakMinutes: parseInt(breakMinutes) || 0,
+hourlyWageOverride: wageOverride ? parseFloat(wageOverride) : undefined,
+notes
+};
+onSave(newShift);
+};
+
+return (
+<div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+<div className="bg-white rounded-2xl w-full max-w-md p-4 space-y-4 shadow-2xl">
+<div className="flex items-center justify-between border-b pb-3">
+<h2 className="font-bold text-base text-slate-900">{shift ? 'Dienst Aanpassen' : 'Nieuwe Dienst Invoeren'}</h2>
+<button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><IconX className="w-5 h-5" /></button>
+</div>
+
+<form onSubmit={handleSubmit} className="space-y-3 text-xs">
+<div>
+<label className="block font-semibold text-slate-700 mb-1">Werkgever</label>
+<select
+value={employerId}
+onChange={e => setEmployerId(e.target.value)}
+className="w-full bg-slate-50 border rounded-xl p-2 font-bold"
+>
+{employers.map(e => <option key={e.id} value={e.id}>{e.name} (€{e.hourlyWage.toFixed(2)}/u)</option>)}
+</select>
+</div>
+
+<div>
+<label className="block font-semibold text-slate-700 mb-1">Datum</label>
+<input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" required />
+</div>
+
+<div className="grid grid-cols-2 gap-3">
+<div>
+<label className="block font-semibold text-slate-700 mb-1">Begintijd</label>
+<input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" required />
+</div>
+<div>
+<label className="block font-semibold text-slate-700 mb-1">Eindtijd</label>
+<input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" required />
+</div>
+</div>
+
+<div className="grid grid-cols-2 gap-3">
+<div>
+<label className="block font-semibold text-slate-700 mb-1">Pauze (minuten)</label>
+<input type="number" value={breakMinutes} onChange={e => setBreakMinutes(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" />
+</div>
+<div>
+<label className="block font-semibold text-slate-700 mb-1">Aangepast Uurloon (€)</label>
+<input type="number" step="0.10" placeholder="Standaard" value={wageOverride} onChange={e => setWageOverride(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" />
+</div>
+</div>
+
+<div>
+<label className="block font-semibold text-slate-700 mb-1">Opmerking</label>
+<input type="text" placeholder="bv. Toeslag uren, Locatie X" value={notes} onChange={e => setNotes(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-medium" />
+</div>
+
+<div className="flex justify-end gap-2 pt-3 border-t">
+<button type="button" onClick={onClose} className="px-4 py-2 font-semibold text-slate-500">Annuleren</button>
+<button type="submit" className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-xl font-bold">Opslaan</button>
+</div>
+</form>
+</div>
+</div>
+);
+}
+
+// --- SETTINGS & SYNOLOGY MODAL WITH HTTPS & PRIVACY COMPLIANCE ---
+function SettingsModal({
+isOpen, onClose, employers, shifts, settings, synology,
+onSaveEmployer, onDeleteEmployer, onSetDefaultEmployer, onSaveSettings, onSaveSynology, onWipeData
+}) {
+const [tab, setTab] = useState('employers'); // employers, params, synology, data
+
+// Employer form
+const [empName, setEmpName] = useState('');
+const [empWage, setEmpWage] = useState('15.00');
+const [editingEmpId, setEditingEmpId] = useState(null);
+
+// Synology form with HTTPS validation & Show/Hide Key toggle
+const [synUrl, setSynUrl] = useState(synology.apiUrl || '');
+const [synKey, setSynKey] = useState(synology.apiKey || '');
+const [showApiKey, setShowApiKey] = useState(false);
+const [synStatus, setSynStatus] = useState(null);
+const [sending, setSending] = useState(false);
+
+// Params form
+const [breakMins, setBreakMins] = useState(settings.defaultBreakMinutes);
+const [currency, setCurrency] = useState(settings.currencySymbol);
+
+// Confirm Wipe Modal State
+const [showConfirmWipe, setShowConfirmWipe] = useState(false);
+
+const handleSaveEmp = (e) => {
+e.preventDefault();
+if (!empName.trim()) return;
+onSaveEmployer({
+id: editingEmpId || `emp-${Date.now()}`,
+name: empName.trim(),
+hourlyWage: parseFloat(empWage) || 15.0,
+color: '#10B981',
+isDefault: employers.length === 0
+});
+setEmpName('');
+setEmpWage('15.00');
+setEditingEmpId(null);
+};
+
+// HTTPS Check for GitHub Pages / Mixed Content prevention
+const handleSendSynology = async () => {
+const trimmedUrl = synUrl.trim();
+
+if (!trimmedUrl) {
+return setSynStatus({ success: false, message: 'Vul a.u.b. een Synology API-url in.' });
+}
+
+// Strict HTTPS Enforcement for GitHub Pages
+if (trimmedUrl.startsWith('http://')) {
+return setSynStatus({
+success: false,
+message: '⚠️ GitHub Pages vereist HTTPS! Onbeveiligde HTTP-verzoeken worden door de browser geblokkeerd (Mixed Content Block). Gebruik een HTTPS-URL (bijv. via Synology QuickConnect / DDNS met SSL).'
+});
+}
+
+if (!trimmedUrl.startsWith('https://')) {
+return setSynStatus({
+success: false,
+message: 'Vul een geldige HTTPS-URL in die begint met https://'
+});
+}
+
+setSending(true);
+setSynStatus(null);
+
+const config = { apiUrl: trimmedUrl, apiKey: synKey.trim() };
+onSaveSynology(config);
+
+try {
+const payload = { app: 'UrenTracker', version: '1.0', totalShifts: shifts.length, employers, shifts };
+const headers = { 'Content-Type': 'application/json' };
+if (config.apiKey) headers['X-API-Key'] = config.apiKey;
+
+const res = await fetch(config.apiUrl, { method: 'POST', headers, body: JSON.stringify(payload) });
+setSending(false);
+if (res.ok) {
+setSynStatus({ success: true, message: `Succesvol versleuteld verzonden naar Synology NAS (${res.status})!` });
+} else {
+setSynStatus({ success: false, message: `NAS gaf statuscode ${res.status}. Controleer de URL en instellingen.` });
+}
+} catch (err) {
+setSending(false);
+setSynStatus({
+success: false,
+message: `Verbindingsfout (${err.message || 'Netwerkfout'}). Zorg dat je Synology NAS CORS-verzoeken toestaat en een geldig SSL-certificaat heeft.`
+});
+}
+};
+
+// Download JSON Backup
+const downloadJSON = () => {
+const jsonStr = JSON.stringify({ employers, shifts, settings }, null, 2);
+const blob = new Blob([jsonStr], { type: 'application/json' });
+const a = document.createElement('a');
+a.href = URL.createObjectURL(blob);
+a.download = `uren-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+a.click();
+};
+
+return (
+<div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+<div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden relative">
+
+{/* Header */}
+<div className="p-4 border-b flex items-center justify-between bg-white">
+<div className="flex items-center gap-2">
+<IconSettings className="w-5 h-5 text-emerald-600" />
+<h2 className="font-bold text-base text-slate-900">Instellingen & Privacy Beheer</h2>
+</div>
+<button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><IconX className="w-5 h-5" /></button>
+</div>
+
+{/* Tabs */}
+<div className="bg-slate-50 p-2 border-b grid grid-cols-4 gap-1 text-center text-xs font-bold">
+<button onClick={() => setTab('employers')} className={`py-1.5 rounded-lg ${tab === 'employers' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'}`}>Werkgevers</button>
+<button onClick={() => setTab('params')} className={`py-1.5 rounded-lg ${tab === 'params' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'}`}>Parameters</button>
+<button onClick={() => setTab('synology')} className={`py-1.5 rounded-lg ${tab === 'synology' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'}`}>Synology NAS</button>
+<button onClick={() => setTab('data')} className={`py-1.5 rounded-lg ${tab === 'data' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'}`}>Data & AVG</button>
+</div>
+
+{/* Content */}
+<div className="p-4 overflow-y-auto space-y-4 flex-1 text-xs">
+
+{/* TAB 1: WERKGEVERS */}
+{tab === 'employers' && (
+<div className="space-y-3">
+<form onSubmit={handleSaveEmp} className="bg-slate-50 p-3 rounded-xl border space-y-2">
+<p className="font-bold text-slate-800">{editingEmpId ? 'Werkgever bewerken' : 'Nieuwe Werkgever Toevoegen'}</p>
+<div className="grid grid-cols-2 gap-2">
+<input type="text" placeholder="Naam werkgever" value={empName} onChange={e => setEmpName(e.target.value)} className="bg-white border rounded-lg p-2 font-semibold" required />
+<input type="number" step="0.10" placeholder="Uurloon (€)" value={empWage} onChange={e => setEmpWage(e.target.value)} className="bg-white border rounded-lg p-2 font-semibold" required />
+</div>
+<button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-1.5 rounded-lg">Opslaan</button>
+</form>
+
+<div className="space-y-2">
+{employers.map(emp => (
+<div key={emp.id} className="p-2.5 bg-slate-50 border rounded-xl flex items-center justify-between">
+<div>
+<span className="font-bold text-slate-800">{emp.name}</span>
+<p className="text-[11px] text-slate-500">€{emp.hourlyWage.toFixed(2)} / uur {emp.isDefault && '· Standaard'}</p>
+</div>
+<div className="flex items-center gap-1">
+{!emp.isDefault && (
+<button onClick={() => onSetDefaultEmployer(emp.id)} className="text-[10px] font-bold bg-white border px-2 py-1 rounded">Standaard</button>
+)}
+<button onClick={() => { setEditingEmpId(emp.id); setEmpName(emp.name); setEmpWage(emp.hourlyWage.toString()); }} className="p-1 text-slate-400 hover:text-slate-700"><IconEdit className="w-4 h-4" /></button>
+<button onClick={() => onDeleteEmployer(emp.id)} className="p-1 text-slate-400 hover:text-rose-600"><IconTrash className="w-4 h-4" /></button>
+</div>
+</div>
+))}
+</div>
+</div>
+)}
+
+{/* TAB 2: PARAMETERS */}
+{tab === 'params' && (
+<div className="space-y-3">
+<div className="space-y-2 bg-slate-50 p-3 rounded-xl border">
+<label className="block font-bold">Standaard Pauze (minuten)</label>
+<input type="number" value={breakMins} onChange={e => setBreakMins(parseInt(e.target.value) || 0)} className="w-full bg-white border rounded-lg p-2 font-semibold" />
+</div>
+<div className="space-y-2 bg-slate-50 p-3 rounded-xl border">
+<label className="block font-bold">Valuta Symbool</label>
+<input type="text" value={currency} onChange={e => setCurrency(e.target.value)} className="w-full bg-white border rounded-lg p-2 font-semibold" />
+</div>
+<button onClick={() => onSaveSettings({ ...settings, defaultBreakMinutes: breakMins, currencySymbol: currency })} className="w-full bg-emerald-500 text-white font-bold py-2 rounded-xl">Parameters Opslaan</button>
+</div>
+)}
+
+{/* TAB 3: SYNOLOGY NAS WITH HTTPS ENFORCEMENT & EYE TOGGLE */}
+{tab === 'synology' && (
+<div className="space-y-3">
+<div className="bg-emerald-50/60 border border-emerald-200 p-3 rounded-xl space-y-1">
+<div className="flex items-center gap-1.5 font-bold text-emerald-800 text-xs">
+<IconShield className="w-4 h-4 text-emerald-600" />
+<span>HTTPS Verbinding (GitHub Pages)</span>
+</div>
+<p className="text-[11px] text-emerald-700">
+Omdat deze app via HTTPS op GitHub Pages draait, staat de browser alleen beveiligde `https://` verzoeken toe om Mixed Content blokkades te voorkomen.
+</p>
+</div>
+
+<div className="bg-slate-50 p-3 rounded-xl border space-y-3">
+<div>
+<label className="block font-bold text-slate-800 mb-1">Synology HTTPS Endpoint URL *</label>
+<input
+type="url"
+placeholder="https://nas.example.com:5001/api/uren"
+value={synUrl}
+onChange={e => setSynUrl(e.target.value)}
+className="w-full bg-white border rounded-lg p-2 font-semibold focus:ring-2 focus:ring-emerald-500"
+/>
+</div>
+
+<div>
+<label className="block font-bold text-slate-800 mb-1">API Sleutel / Authorization Token</label>
+<div className="relative">
+<input
+type={showApiKey ? "text" : "password"}
+placeholder="Optioneel geheim token"
+value={synKey}
+onChange={e => setSynKey(e.target.value)}
+className="w-full bg-white border rounded-lg p-2 pr-10 font-semibold focus:ring-2 focus:ring-emerald-500"
+/>
+<button
+type="button"
+onClick={() => setShowApiKey(!showApiKey)}
+className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+title={showApiKey ? "Verberg sleutel" : "Toon sleutel"}
+>
+{showApiKey ? <IconEyeOff className="w-4 h-4" /> : <IconEye className="w-4 h-4" />}
+</button>
+</div>
+</div>
+</div>
+
+<button
+onClick={handleSendSynology}
+disabled={sending}
+className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-xs"
+>
+<IconSend className="w-4 h-4" />
+{sending ? 'Bezig met beveiligd verzenden...' : 'Verstuur nu naar Synology NAS'}
+</button>
+
+{synStatus && (
+<div className={`p-3 rounded-xl text-xs font-semibold leading-relaxed ${synStatus.success ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
+{synStatus.message}
+</div>
+)}
+</div>
+)}
+
+{/* TAB 4: DATA & PRIVACY CONTROL (AVG/GDPR) */}
+{tab === 'data' && (
+<div className="space-y-4">
+{/* Privacy Statement Banner */}
+<div className="bg-slate-900 text-white p-3.5 rounded-xl space-y-1.5">
+<div className="flex items-center gap-2 font-bold text-emerald-400">
+<IconLock className="w-4 h-4" />
+<span>Privacy & AVG (GDPR) Garantie</span>
+</div>
+<p className="text-[11px] text-slate-300 leading-relaxed">
+Alle geregistreerde uren, tarieven en instellingen worden <strong>100% lokaal in jouw eigen browser (LocalStorage)</strong> opgeslagen. Er worden geen analytische cookies of gegevens naar externe servers verstuurd.
+</p>
+</div>
+
+{/* Export Options */}
+<div className="bg-slate-50 border p-3 rounded-xl space-y-2">
+<p className="font-bold text-slate-800">Exporteer & Backup Opties</p>
+<div className="grid grid-cols-1 gap-2">
+<button
+onClick={() => exportToExcel(shifts, employers)}
+className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 shadow-2xs transition-colors"
+>
+<IconFileSpreadsheet className="w-4 h-4" />
+<span>Exporteer naar Excel (.xlsx)</span>
+</button>
+<button
+onClick={downloadJSON}
+className="w-full bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold py-2 rounded-lg flex items-center justify-center gap-2 shadow-2xs"
+>
+<IconDownload className="w-4 h-4 text-emerald-600" />
+<span>Download JSON Backup</span>
+</button>
+</div>
+</div>
+
+{/* Wipe Data Section */}
+<div className="bg-rose-50 border border-rose-200 p-3 rounded-xl space-y-2">
+<div className="flex items-center gap-1.5 text-rose-800 font-bold">
+<IconAlert className="w-4 h-4 text-rose-600" />
+<span>Data Beheer & Verwijdering</span>
+</div>
+<p className="text-[11px] text-rose-700">
+Wil je een schone start maken of al je persoonsgegevens uit de browser wissen?
+</p>
+<button
+onClick={() => setShowConfirmWipe(true)}
+className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+>
+<IconTrash className="w-4 h-4" />
+<span>Alle gegevens definitief wissen</span>
+</button>
+</div>
+</div>
+)}
+
+</div>
+
+{/* Modal Footer */}
+<div className="p-3 bg-slate-50 border-t flex justify-end">
+<button onClick={onClose} className="bg-white border text-slate-700 font-bold px-4 py-1.5 rounded-xl">Sluiten</button>
+</div>
+
+{/* CONFIRM WIPE SUB-MODAL */}
+{showConfirmWipe && (
+<div className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+<div className="bg-white rounded-2xl p-4 max-w-xs w-full space-y-3 text-center shadow-2xl border border-slate-200">
+<div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+<IconAlert className="w-6 h-6" />
+</div>
+<h3 className="font-bold text-slate-900 text-sm">Weet je het zeker?</h3>
+<p className="text-xs text-slate-500">
+Dit verwijdert onherroepelijk alle geregistreerde diensten, werkgevers en instellingen uit LocalStorage.
+</p>
+<div className="flex gap-2 pt-2">
+<button
+onClick={() => setShowConfirmWipe(false)}
+className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs"
+>
+Annuleren
+</button>
+<button
+onClick={() => {
+setShowConfirmWipe(false);
+onWipeData();
+onClose();
+}}
+className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-xl text-xs"
+>
+Ja, alles wissen
+</button>
+</div>
+</div>
+</div>
+)}
+
+</div>
+</div>
+);
+}
+
+// Render the React App
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
 </body>
 </html>
