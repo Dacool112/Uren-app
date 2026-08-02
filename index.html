@@ -36,6 +36,15 @@ const { useState, useEffect, useRef } = React;
 const IconClock = ({ className = "w-4 h-4" }) => (
 <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 );
+const IconPlay = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+);
+const IconPause = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+);
+const IconStop = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" /></svg>
+);
 const IconBuilding = ({ className = "w-4 h-4" }) => (
 <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0h4m-4 0H7" /></svg>
 );
@@ -69,6 +78,9 @@ const IconShield = ({ className = "w-4 h-4" }) => (
 const IconDownload = ({ className = "w-4 h-4" }) => (
 <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
 );
+const IconUpload = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" /></svg>
+);
 const IconAlert = ({ className = "w-4 h-4" }) => (
 <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 );
@@ -84,12 +96,16 @@ const IconEyeOff = ({ className = "w-4 h-4" }) => (
 const IconFileSpreadsheet = ({ className = "w-4 h-4" }) => (
 <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
 );
+const IconFilter = ({ className = "w-4 h-4" }) => (
+<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+);
 
 // --- LOCAL STORAGE KEYS & PRODUCTION DEFAULTS ---
 const STORAGE_EMPLOYERS_KEY = 'uren_tracker_employers_v1';
 const STORAGE_SHIFTS_KEY = 'uren_tracker_shifts_v1';
 const STORAGE_SYNOLOGY_KEY = 'uren_tracker_synology_config_v1';
 const STORAGE_SETTINGS_KEY = 'uren_tracker_settings_v1';
+const STORAGE_TIMER_KEY = 'uren_tracker_active_timer_v1';
 
 const DEFAULT_EMPLOYERS = [
 { id: 'emp-1', name: 'Werkgever A', hourlyWage: 15.00, color: '#10B981', isDefault: true, notes: 'Hoofdbaan' },
@@ -167,6 +183,21 @@ function saveSynologyConfig(data) {
 localStorage.setItem(STORAGE_SYNOLOGY_KEY, JSON.stringify(data));
 }
 
+function loadActiveTimer() {
+try {
+const data = localStorage.getItem(STORAGE_TIMER_KEY);
+return data ? JSON.parse(data) : null;
+} catch (e) { return null; }
+}
+
+function saveActiveTimer(data) {
+if (data) {
+localStorage.setItem(STORAGE_TIMER_KEY, JSON.stringify(data));
+} else {
+localStorage.removeItem(STORAGE_TIMER_KEY);
+}
+}
+
 function parseTimeToMinutes(timeStr) {
 if (!timeStr) return 0;
 const [h, m] = timeStr.split(':').map(Number);
@@ -217,17 +248,17 @@ return {
 
 const worksheet = XLSX.utils.json_to_sheet(rows);
 
-// Kolombreedtes instellen voor een mooie weergave in Excel
+// Kolombreedtes instellen
 worksheet['!cols'] = [
-{ wch: 12 }, // Datum
-{ wch: 20 }, // Werkgever / Klant
-{ wch: 10 }, // Begintijd
-{ wch: 10 }, // Eindtijd
-{ wch: 15 }, // Pauze (minuten)
-{ wch: 12 }, // Totaal Uren
-{ wch: 12 }, // Uurloon (€)
-{ wch: 18 }, // Totaal Verdient (€)
-{ wch: 30 } // Locatie / Notitie
+{ wch: 12 },
+{ wch: 20 },
+{ wch: 10 },
+{ wch: 10 },
+{ wch: 15 },
+{ wch: 12 },
+{ wch: 12 },
+{ wch: 18 },
+{ wch: 30 }
 ];
 
 const workbook = XLSX.utils.book_new();
@@ -244,7 +275,13 @@ const [shifts, setShifts] = useState(loadShifts);
 const [settings, setSettings] = useState(loadAppSettings);
 const [synology, setSynology] = useState(loadSynologyConfig);
 
+// Live Clock-In Timer State
+const [timer, setTimer] = useState(loadActiveTimer);
+const [now, setNow] = useState(Date.now());
+
+// Filters
 const [selectedEmployerId, setSelectedEmployerId] = useState('all');
+const [selectedMonth, setSelectedMonth] = useState('all'); // 'all' of 'YYYY-MM'
 const [activeTab, setActiveTab] = useState('overview');
 
 // Modals
@@ -253,12 +290,100 @@ const [editingShift, setEditingShift] = useState(null);
 const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 const [toast, setToast] = useState(null);
 
+// Save handlers
 useEffect(() => { saveEmployers(employers); }, [employers]);
 useEffect(() => { saveShifts(shifts); }, [shifts]);
+useEffect(() => { saveActiveTimer(timer); }, [timer]);
+
+// Timer interval ticker (updates every second)
+useEffect(() => {
+const interval = setInterval(() => setNow(Date.now()), 1000);
+return () => clearInterval(interval);
+}, []);
 
 const showToast = (msg) => {
 setToast(msg);
 setTimeout(() => setToast(null), 2500);
+};
+
+// --- LIVE TIMER LOGIC ---
+const handleClockIn = (empId) => {
+const startTime = Date.now();
+const dateObj = new Date(startTime);
+const startClockTime = dateObj.toTimeString().substring(0, 5); // 'HH:MM'
+const startDateStr = dateObj.toISOString().split('T')[0];
+
+const newTimer = {
+startTime,
+startClockTime,
+startDateStr,
+employerId: empId || (employers[0] ? employers[0].id : ''),
+isPaused: false,
+pauseStartTime: null,
+totalPauseMs: 0
+};
+
+setTimer(newTimer);
+showToast('Ingeklokt! Timer is gestart.');
+};
+
+const handleTogglePauseTimer = () => {
+if (!timer) return;
+if (timer.isPaused) {
+// Resume work
+const pauseDuration = Date.now() - timer.pauseStartTime;
+setTimer({
+...timer,
+isPaused: false,
+pauseStartTime: null,
+totalPauseMs: timer.totalPauseMs + pauseDuration
+});
+showToast('Werk hervat!');
+} else {
+// Start pause
+setTimer({
+...timer,
+isPaused: true,
+pauseStartTime: Date.now()
+});
+showToast('Pauze gestart!');
+}
+};
+
+const handleClockOut = () => {
+if (!timer) return;
+
+const clockOutTime = Date.now();
+const endDateObj = new Date(clockOutTime);
+const endClockTime = endDateObj.toTimeString().substring(0, 5); // 'HH:MM'
+
+let finalPauseMs = timer.totalPauseMs;
+if (timer.isPaused && timer.pauseStartTime) {
+finalPauseMs += (clockOutTime - timer.pauseStartTime);
+}
+
+const totalPauseMinutes = Math.round(finalPauseMs / (1000 * 60));
+
+// Open shift modal pre-filled with live tracked data
+setEditingShift({
+id: `shift-${Date.now()}`,
+employerId: timer.employerId,
+date: timer.startDateStr,
+startTime: timer.startClockTime,
+endTime: endClockTime,
+breakMinutes: totalPauseMinutes,
+notes: 'Automatisch geregistreerd via Live Timer'
+});
+
+setTimer(null);
+setIsShiftModalOpen(true);
+};
+
+const handleCancelTimer = () => {
+if (confirm('Weet je zeker dat je de lopende timer wilt annuleren zonder op te slaan?')) {
+setTimer(null);
+showToast('Timer geannuleerd.');
+}
 };
 
 // Employers Handlers
@@ -306,18 +431,46 @@ localStorage.removeItem(STORAGE_EMPLOYERS_KEY);
 localStorage.removeItem(STORAGE_SHIFTS_KEY);
 localStorage.removeItem(STORAGE_SYNOLOGY_KEY);
 localStorage.removeItem(STORAGE_SETTINGS_KEY);
+localStorage.removeItem(STORAGE_TIMER_KEY);
 
 setEmployers(DEFAULT_EMPLOYERS);
 setShifts(SAMPLE_SHIFTS);
 setSettings(DEFAULT_SETTINGS);
 setSynology(DEFAULT_SYNOLOGY);
+setTimer(null);
 showToast('Alle gegevens zijn volledig gewist!');
 };
 
-// Filtered Shifts
-const filteredShifts = shifts.filter(s => selectedEmployerId === 'all' || s.employerId === selectedEmployerId);
+// Restore JSON Backup Handler
+const handleRestoreBackup = (restoredData) => {
+if (restoredData.employers && Array.isArray(restoredData.employers)) {
+setEmployers(restoredData.employers);
+}
+if (restoredData.shifts && Array.isArray(restoredData.shifts)) {
+setShifts(restoredData.shifts);
+}
+if (restoredData.settings) {
+setSettings({ ...DEFAULT_SETTINGS, ...restoredData.settings });
+}
+if (restoredData.synology) {
+setSynology({ ...DEFAULT_SYNOLOGY, ...restoredData.synology });
+}
+showToast('Back-up succesvol hersteld!');
+};
 
-// Calculations
+// Extract unique available YYYY-MM months from shifts for filter dropdown
+const availableMonths = Array.from(
+new Set(shifts.map(s => s.date ? s.date.substring(0, 7) : ''))
+).filter(Boolean).sort().reverse();
+
+// Filtered Shifts Calculation
+const filteredShifts = shifts.filter(s => {
+const matchesEmployer = selectedEmployerId === 'all' || s.employerId === selectedEmployerId;
+const matchesMonth = selectedMonth === 'all' || (s.date && s.date.startsWith(selectedMonth));
+return matchesEmployer && matchesMonth;
+});
+
+// Calculations for current selection
 const totalStats = filteredShifts.reduce((acc, s) => {
 const calc = calculateShiftEarnings(s, employers);
 return {
@@ -325,6 +478,27 @@ hours: acc.hours + calc.netHours,
 earnings: acc.earnings + calc.earnings
 };
 }, { hours: 0, earnings: 0 });
+
+// Live Timer elapsed formatting
+let elapsedSeconds = 0;
+let activePauseMinutes = 0;
+if (timer) {
+let currentEffectiveMs = now - timer.startTime - timer.totalPauseMs;
+if (timer.isPaused && timer.pauseStartTime) {
+currentEffectiveMs -= (now - timer.pauseStartTime);
+activePauseMinutes = Math.floor((timer.totalPauseMs + (now - timer.pauseStartTime)) / 60000);
+} else {
+activePauseMinutes = Math.floor(timer.totalPauseMs / 60000);
+}
+elapsedSeconds = Math.max(0, Math.floor(currentEffectiveMs / 1000));
+}
+
+const formatTimerHHMMSS = (sec) => {
+const hrs = Math.floor(sec / 3600);
+const mins = Math.floor((sec % 3600) / 60);
+const secs = sec % 60;
+return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
 
 return (
 <div className="max-w-lg mx-auto bg-white min-h-screen shadow-xl flex flex-col pb-20 relative border-x border-slate-200">
@@ -365,10 +539,12 @@ className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-xl
 </button>
 </div>
 
-{/* Sub Bar */}
-<div className="bg-slate-50 px-4 py-2 border-t border-slate-100 flex items-center justify-between text-xs">
-<div className="flex items-center gap-2">
-<span className="text-slate-400 font-medium">Werkgever:</span>
+{/* FILTER & SUB BAR */}
+<div className="bg-slate-50 px-4 py-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+<div className="flex items-center gap-1.5 flex-wrap">
+<IconFilter className="w-3.5 h-3.5 text-slate-400" />
+
+{/* Werkgever Filter */}
 <select
 value={selectedEmployerId}
 onChange={e => setSelectedEmployerId(e.target.value)}
@@ -376,6 +552,21 @@ className="bg-white border border-slate-200 text-slate-800 text-xs font-bold py-
 >
 <option value="all">Alle werkgevers</option>
 {employers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+</select>
+
+{/* Maand / Jaar Filter */}
+<select
+value={selectedMonth}
+onChange={e => setSelectedMonth(e.target.value)}
+className="bg-white border border-slate-200 text-slate-800 text-xs font-bold py-1 px-2 rounded-lg"
+>
+<option value="all">Alle maanden</option>
+{availableMonths.map(m => {
+const [year, month] = m.split('-');
+const dateObj = new Date(parseInt(year), parseInt(month) - 1, 1);
+const monthName = dateObj.toLocaleString('nl-NL', { month: 'long', year: 'numeric' });
+return <option key={m} value={m}>{monthName}</option>;
+})}
 </select>
 </div>
 
@@ -392,22 +583,95 @@ Instellingen
 {/* CONTENT AREA */}
 <main className="p-4 flex-1 space-y-4">
 
-{/* STATS OVERVIEW CARD */}
-<div className="bg-slate-900 text-white rounded-2xl p-4 shadow-md space-y-3">
-<div className="flex items-center justify-between text-xs text-slate-400">
-<span>Totaal Overzicht</span>
-<span className="bg-slate-800 px-2 py-0.5 rounded text-[10px] font-semibold text-slate-300">
+{/* LIVE INKLOKKEN / TIMER CARD */}
+<div className="bg-slate-900 text-white rounded-2xl p-4 shadow-md space-y-3 relative overflow-hidden border border-slate-800">
+<div className="flex items-center justify-between text-xs">
+<div className="flex items-center gap-2">
+<span className={`w-2.5 h-2.5 rounded-full ${timer ? (timer.isPaused ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400 animate-pulse') : 'bg-slate-600'}`} />
+<span className="font-bold text-slate-200">
+{timer ? (timer.isPaused ? '⏱️ In Pauze' : '🟢 Werk aan de gang') : '⏱️ Live Inklokken'}
+</span>
+</div>
+
+{timer && (
+<button
+onClick={handleCancelTimer}
+className="text-[10px] text-slate-400 hover:text-rose-400 font-semibold"
+>
+Annuleren
+</button>
+)}
+</div>
+
+{timer ? (
+/* ACTIVE CLOCK-IN STATE */
+<div className="space-y-3 pt-1">
+<div className="flex items-baseline justify-between border-t border-b border-slate-800 py-3">
+<div>
+<p className="text-[10px] text-slate-400 font-medium">Begonnen om {timer.startClockTime}</p>
+<p className="text-3xl font-mono font-black text-emerald-400 tracking-wider">
+{formatTimerHHMMSS(elapsedSeconds)}
+</p>
+</div>
+<div className="text-right">
+<p className="text-[10px] text-slate-400">Pauze duurt:</p>
+<p className="text-sm font-bold text-amber-300">{activePauseMinutes} min</p>
+</div>
+</div>
+
+<div className="grid grid-cols-2 gap-2 pt-1">
+<button
+onClick={handleTogglePauseTimer}
+className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors ${timer.isPaused ? 'bg-amber-500 hover:bg-amber-600 text-slate-950' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+>
+{timer.isPaused ? <IconPlay className="w-4 h-4" /> : <IconPause className="w-4 h-4" />}
+<span>{timer.isPaused ? 'Hervat Werk' : 'Pauzeer'}</span>
+</button>
+
+<button
+onClick={handleClockOut}
+className="bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+>
+<IconStop className="w-4 h-4" />
+<span>Uitklokken</span>
+</button>
+</div>
+</div>
+) : (
+/* INKLOKKEN START STATE */
+<div className="flex items-center justify-between gap-3 pt-1">
+<div className="text-xs space-y-0.5">
+<p className="text-slate-300 font-medium">Klaar om te beginnen?</p>
+<p className="text-[11px] text-slate-400">Start de live timer bij het starten van je dienst.</p>
+</div>
+
+<button
+onClick={() => handleClockIn(selectedEmployerId !== 'all' ? selectedEmployerId : (employers[0]?.id))}
+className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-transform active:scale-95"
+>
+<IconPlay className="w-4 h-4" />
+<span>Inklokken</span>
+</button>
+</div>
+)}
+</div>
+
+{/* SAMENVATTINGSKAART (GEFILTERDE TOTALEN) */}
+<div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
+<div className="flex items-center justify-between text-xs text-slate-500 font-medium">
+<span>Geselecteerde Periode / Filter Samenvatting</span>
+<span className="bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded text-[10px]">
 {filteredShifts.length} dienst(en)
 </span>
 </div>
-<div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-3">
-<div>
-<p className="text-[11px] text-slate-400 font-medium">Gewerkte Uren</p>
-<p className="text-2xl font-black text-emerald-400">{totalStats.hours.toFixed(1)} u</p>
+<div className="grid grid-cols-2 gap-4 pt-1">
+<div className="bg-white p-3 rounded-xl border border-slate-200/80">
+<p className="text-[11px] text-slate-400 font-medium">Totaal Uren</p>
+<p className="text-xl font-black text-emerald-600">{totalStats.hours.toFixed(1)} u</p>
 </div>
-<div>
-<p className="text-[11px] text-slate-400 font-medium">Te ontvangen Loon</p>
-<p className="text-2xl font-black text-white">{settings.currencySymbol}{totalStats.earnings.toFixed(2)}</p>
+<div className="bg-white p-3 rounded-xl border border-slate-200/80">
+<p className="text-[11px] text-slate-400 font-medium">Totaal Verdiend</p>
+<p className="text-xl font-black text-slate-900">{settings.currencySymbol}{totalStats.earnings.toFixed(2)}</p>
 </div>
 </div>
 </div>
@@ -429,8 +693,8 @@ title="Download alle diensten als Microsoft Excel bestand"
 {filteredShifts.length === 0 ? (
 <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
 <IconClock className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-<p className="text-xs font-bold text-slate-600">Nog geen diensten ingevoerd</p>
-<p className="text-[11px] text-slate-400 mt-0.5">Klik bovenaan op "+ Nieuw" om een dienst toe te voegen.</p>
+<p className="text-xs font-bold text-slate-600">Geen diensten gevonden voor dit filter</p>
+<p className="text-[11px] text-slate-400 mt-0.5">Klik op "+ Nieuw" of pas je filter aan.</p>
 </div>
 ) : (
 filteredShifts.map(shift => {
@@ -506,7 +770,7 @@ onSave={handleSaveShift}
 />
 )}
 
-{/* MODAL 2: FULL SETTINGS & WERKGEVERS & SYNOLOGY */}
+{/* MODAL 2: FULL SETTINGS & WERKGEVERS & SYNOLOGY & BACKUP */}
 {isSettingsModalOpen && (
 <SettingsModal
 isOpen={isSettingsModalOpen}
@@ -521,6 +785,7 @@ onSetDefaultEmployer={handleSetDefaultEmployer}
 onSaveSettings={(s) => { setSettings(s); saveAppSettings(s); showToast('Parameters opgeslagen!'); }}
 onSaveSynology={(syn) => { setSynology(syn); saveSynologyConfig(syn); }}
 onWipeData={handleWipeAllData}
+onRestoreBackup={handleRestoreBackup}
 />
 )}
 </div>
@@ -619,7 +884,7 @@ className="w-full bg-slate-50 border rounded-xl p-2 font-bold"
 // --- SETTINGS & SYNOLOGY MODAL WITH HTTPS & PRIVACY COMPLIANCE ---
 function SettingsModal({
 isOpen, onClose, employers, shifts, settings, synology,
-onSaveEmployer, onDeleteEmployer, onSetDefaultEmployer, onSaveSettings, onSaveSynology, onWipeData
+onSaveEmployer, onDeleteEmployer, onSetDefaultEmployer, onSaveSettings, onSaveSynology, onWipeData, onRestoreBackup
 }) {
 const [tab, setTab] = useState('employers'); // employers, params, synology, data
 
@@ -641,6 +906,9 @@ const [currency, setCurrency] = useState(settings.currencySymbol);
 
 // Confirm Wipe Modal State
 const [showConfirmWipe, setShowConfirmWipe] = useState(false);
+
+// File ref for upload backup
+const fileInputRef = useRef(null);
 
 const handleSaveEmp = (e) => {
 e.preventDefault();
@@ -709,12 +977,33 @@ message: `Verbindingsfout (${err.message || 'Netwerkfout'}). Zorg dat je Synolog
 
 // Download JSON Backup
 const downloadJSON = () => {
-const jsonStr = JSON.stringify({ employers, shifts, settings }, null, 2);
+const jsonStr = JSON.stringify({ employers, shifts, settings, synology }, null, 2);
 const blob = new Blob([jsonStr], { type: 'application/json' });
 const a = document.createElement('a');
 a.href = URL.createObjectURL(blob);
 a.download = `uren-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
 a.click();
+};
+
+// Upload JSON Backup
+const handleFileUpload = (e) => {
+const file = e.target.files[0];
+if (!file) return;
+
+const reader = new FileReader();
+reader.onload = (event) => {
+try {
+const parsed = JSON.parse(event.target.result);
+if (!parsed.employers && !parsed.shifts) {
+alert('Ongeldig back-up bestand.');
+return;
+}
+onRestoreBackup(parsed);
+} catch (err) {
+alert('Fout bij het lezen van het JSON bestand: ' + err.message);
+}
+};
+reader.readAsText(file);
 };
 
 return (
@@ -852,7 +1141,7 @@ className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.
 </div>
 )}
 
-{/* TAB 4: DATA & PRIVACY CONTROL (AVG/GDPR) */}
+{/* TAB 4: DATA & PRIVACY CONTROL & BACKUP / RESTORE */}
 {tab === 'data' && (
 <div className="space-y-4">
 {/* Privacy Statement Banner */}
@@ -866,9 +1155,9 @@ Alle geregistreerde uren, tarieven en instellingen worden <strong>100% lokaal in
 </p>
 </div>
 
-{/* Export Options */}
+{/* Export & Restore Options */}
 <div className="bg-slate-50 border p-3 rounded-xl space-y-2">
-<p className="font-bold text-slate-800">Exporteer & Backup Opties</p>
+<p className="font-bold text-slate-800">Back-up & Herstel (JSON Data Portability)</p>
 <div className="grid grid-cols-1 gap-2">
 <button
 onClick={() => exportToExcel(shifts, employers)}
@@ -877,13 +1166,32 @@ className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 
 <IconFileSpreadsheet className="w-4 h-4" />
 <span>Exporteer naar Excel (.xlsx)</span>
 </button>
+
+<div className="grid grid-cols-2 gap-2">
 <button
 onClick={downloadJSON}
-className="w-full bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold py-2 rounded-lg flex items-center justify-center gap-2 shadow-2xs"
+className="w-full bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold py-2 rounded-lg flex items-center justify-center gap-1.5 shadow-2xs"
 >
 <IconDownload className="w-4 h-4 text-emerald-600" />
-<span>Download JSON Backup</span>
+<span>Download Back-up (JSON)</span>
 </button>
+
+<button
+onClick={() => fileInputRef.current?.click()}
+className="w-full bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold py-2 rounded-lg flex items-center justify-center gap-1.5 shadow-2xs"
+>
+<IconUpload className="w-4 h-4 text-blue-600" />
+<span>Herstel Back-up (JSON)</span>
+</button>
+</div>
+
+<input
+type="file"
+ref={fileInputRef}
+onChange={handleFileUpload}
+accept=".json"
+className="hidden"
+/>
 </div>
 </div>
 
