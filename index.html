@@ -119,15 +119,13 @@
     const STORAGE_TIMER_KEY = 'uren_tracker_active_timer_v1';
 
     const DEFAULT_EMPLOYERS = [
-      { id: 'emp-1', name: 'Werkgever A', hourlyWage: 15.00, color: '#10B981', isDefault: true, notes: 'Hoofdbaan' },
-      { id: 'emp-2', name: 'Werkgever B', hourlyWage: 17.50, color: '#3B82F6', isDefault: false, notes: 'Bijbaan / Projecten' }
+      { id: 'emp-1', name: 'Werkgever A', color: '#10B981', isDefault: true, notes: 'Hoofdbaan' },
+      { id: 'emp-2', name: 'Werkgever B', color: '#3B82F6', isDefault: false, notes: 'Bijbaan / Projecten' }
     ];
 
     const DEFAULT_SETTINGS = {
       defaultBreakMinutes: 30,
-      defaultShiftDurationHours: 8,
-      lateCancellationHoursThreshold: 24,
-      currencySymbol: '€'
+      defaultShiftDurationHours: 8
     };
 
     const DEFAULT_SYNOLOGY = {
@@ -144,7 +142,6 @@
         startTime: '08:30',
         endTime: '17:00',
         breakMinutes: 30,
-        surchargePercentage: 100,
         notes: 'Dagdienst - Reguliere uren'
       }
     ];
@@ -215,10 +212,7 @@
       return (h || 0) * 60 + (m || 0);
     }
 
-    function calculateShiftEarnings(shift, employers) {
-      const emp = employers.find(e => e.id === shift.employerId);
-      const wage = shift.hourlyWageOverride !== undefined ? shift.hourlyWageOverride : (emp ? emp.hourlyWage : 0);
-
+    function calculateShiftHours(shift) {
       const start = parseTimeToMinutes(shift.startTime);
       let end = parseTimeToMinutes(shift.endTime);
       if (end <= start) end += 24 * 60; // Nachtdienst
@@ -227,10 +221,7 @@
       const netMinutes = Math.max(0, totalMinutes - (shift.breakMinutes || 0));
       const netHours = netMinutes / 60;
 
-      const multiplier = (shift.surchargePercentage || 100) / 100;
-      const earnings = netHours * wage * multiplier;
-
-      return { netHours, earnings, hourlyWageUsed: wage };
+      return { netHours };
     }
 
     // --- EXCEL EXPORT HELPER (SheetJS / XLSX) ---
@@ -242,7 +233,7 @@
 
       const rows = shifts.map(shift => {
         const emp = employers.find(e => e.id === shift.employerId);
-        const calc = calculateShiftEarnings(shift, employers);
+        const calc = calculateShiftHours(shift);
 
         return {
           'Datum': shift.date,
@@ -251,8 +242,6 @@
           'Eindtijd': shift.endTime,
           'Pauze (minuten)': shift.breakMinutes || 0,
           'Totaal Uren': Number(calc.netHours.toFixed(2)),
-          'Uurloon (€)': Number(calc.hourlyWageUsed.toFixed(2)),
-          'Totaal Verdient (€)': Number(calc.earnings.toFixed(2)),
           'Locatie / Notitie': shift.notes || ''
         };
       });
@@ -262,14 +251,12 @@
       // Kolombreedtes instellen
       worksheet['!cols'] = [
         { wch: 12 },
-        { wch: 20 },
+        { wch: 22 },
         { wch: 10 },
         { wch: 10 },
         { wch: 15 },
-        { wch: 12 },
-        { wch: 12 },
-        { wch: 18 },
-        { wch: 30 }
+        { wch: 14 },
+        { wch: 32 }
       ];
 
       const workbook = XLSX.utils.book_new();
@@ -481,14 +468,11 @@
         return matchesEmployer && matchesMonth;
       });
 
-      // Calculations for current selection
-      const totalStats = filteredShifts.reduce((acc, s) => {
-        const calc = calculateShiftEarnings(s, employers);
-        return {
-          hours: acc.hours + calc.netHours,
-          earnings: acc.earnings + calc.earnings
-        };
-      }, { hours: 0, earnings: 0 });
+      // Calculations for current selection: Total Net Hours Worked
+      const totalHours = filteredShifts.reduce((acc, s) => {
+        const calc = calculateShiftHours(s);
+        return acc + calc.netHours;
+      }, 0);
 
       // Live Timer elapsed formatting
       let elapsedSeconds = 0;
@@ -667,7 +651,7 @@
               )}
             </div>
 
-            {/* SAMENVATTINGSKAART (GEFILTERDE TOTALEN) */}
+            {/* SAMENVATTINGSKAART (TOTAAL GEWERKTE UREN) */}
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
               <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
                 <span>Geselecteerde Periode / Filter Samenvatting</span>
@@ -675,14 +659,13 @@
                   {filteredShifts.length} dienst(en)
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-1">
-                <div className="bg-white p-3 rounded-xl border border-slate-200/80">
-                  <p className="text-[11px] text-slate-400 font-medium">Totaal Uren</p>
-                  <p className="text-xl font-black text-emerald-600">{totalStats.hours.toFixed(1)} u</p>
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] text-slate-400 font-medium">Totaal Gewerkte Uren</p>
+                  <p className="text-2xl font-black text-emerald-600">{totalHours.toFixed(1)} uur</p>
                 </div>
-                <div className="bg-white p-3 rounded-xl border border-slate-200/80">
-                  <p className="text-[11px] text-slate-400 font-medium">Totaal Verdiend</p>
-                  <p className="text-xl font-black text-slate-900">{settings.currencySymbol}{totalStats.earnings.toFixed(2)}</p>
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <IconClock className="w-5 h-5" />
                 </div>
               </div>
             </div>
@@ -710,7 +693,7 @@
               ) : (
                 filteredShifts.map(shift => {
                   const emp = employers.find(e => e.id === shift.employerId);
-                  const calc = calculateShiftEarnings(shift, employers);
+                  const calc = calculateShiftHours(shift);
 
                   return (
                     <div key={shift.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between hover:border-slate-300 transition-colors">
@@ -726,7 +709,9 @@
                       </div>
 
                       <div className="text-right space-y-1">
-                        <p className="font-extrabold text-sm text-emerald-700">{settings.currencySymbol}{calc.earnings.toFixed(2)}</p>
+                        <span className="inline-block bg-emerald-100 text-emerald-800 font-extrabold text-xs px-2 py-0.5 rounded-lg">
+                          {calc.netHours.toFixed(1)} u
+                        </span>
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => { setEditingShift(shift); setIsShiftModalOpen(true); }}
@@ -812,7 +797,6 @@
       const [startTime, setStartTime] = useState(shift ? shift.startTime : '09:00');
       const [endTime, setEndTime] = useState(shift ? shift.endTime : '17:00');
       const [breakMinutes, setBreakMinutes] = useState(shift ? shift.breakMinutes : settings.defaultBreakMinutes);
-      const [wageOverride, setWageOverride] = useState(shift && shift.hourlyWageOverride !== undefined ? shift.hourlyWageOverride.toString() : '');
       const [notes, setNotes] = useState(shift ? shift.notes || '' : '');
 
       const handleSubmit = (e) => {
@@ -824,7 +808,6 @@
           startTime,
           endTime,
           breakMinutes: parseInt(breakMinutes) || 0,
-          hourlyWageOverride: wageOverride ? parseFloat(wageOverride) : undefined,
           notes
         };
         onSave(newShift);
@@ -840,13 +823,13 @@
 
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Werkgever</label>
+                <label className="block font-semibold text-slate-700 mb-1">Werkgever / Klant</label>
                 <select
                   value={employerId}
                   onChange={e => setEmployerId(e.target.value)}
                   className="w-full bg-slate-50 border rounded-xl p-2 font-bold"
                 >
-                  {employers.map(e => <option key={e.id} value={e.id}>{e.name} (€{e.hourlyWage.toFixed(2)}/u)</option>)}
+                  {employers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                 </select>
               </div>
 
@@ -866,20 +849,14 @@
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Pauze (minuten)</label>
-                  <input type="number" value={breakMinutes} onChange={e => setBreakMinutes(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Aangepast Uurloon (€)</label>
-                  <input type="number" step="0.10" placeholder="Standaard" value={wageOverride} onChange={e => setWageOverride(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" />
-                </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Pauze (minuten)</label>
+                <input type="number" value={breakMinutes} onChange={e => setBreakMinutes(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-semibold" />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Opmerking</label>
-                <input type="text" placeholder="bv. Toeslag uren, Locatie X" value={notes} onChange={e => setNotes(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-medium" />
+                <label className="block font-semibold text-slate-700 mb-1">Notitie / Locatie</label>
+                <input type="text" placeholder="bv. Locatie X, Overwerk" value={notes} onChange={e => setNotes(e.target.value)} className="w-full bg-slate-50 border rounded-xl p-2 font-medium" />
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t">
@@ -901,7 +878,6 @@
       
       // Employer form
       const [empName, setEmpName] = useState('');
-      const [empWage, setEmpWage] = useState('15.00');
       const [editingEmpId, setEditingEmpId] = useState(null);
 
       // Synology form with HTTPS validation & Show/Hide Key toggle
@@ -913,7 +889,6 @@
 
       // Params form
       const [breakMins, setBreakMins] = useState(settings.defaultBreakMinutes);
-      const [currency, setCurrency] = useState(settings.currencySymbol);
 
       // Confirm Wipe Modal State
       const [showConfirmWipe, setShowConfirmWipe] = useState(false);
@@ -927,12 +902,10 @@
         onSaveEmployer({
           id: editingEmpId || `emp-${Date.now()}`,
           name: empName.trim(),
-          hourlyWage: parseFloat(empWage) || 15.0,
           color: '#10B981',
           isDefault: employers.length === 0
         });
         setEmpName('');
-        setEmpWage('15.00');
         setEditingEmpId(null);
       };
 
@@ -1046,11 +1019,10 @@
                 <div className="space-y-3">
                   <form onSubmit={handleSaveEmp} className="bg-slate-50 p-3 rounded-xl border space-y-2">
                     <p className="font-bold text-slate-800">{editingEmpId ? 'Werkgever bewerken' : 'Nieuwe Werkgever Toevoegen'}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input type="text" placeholder="Naam werkgever" value={empName} onChange={e => setEmpName(e.target.value)} className="bg-white border rounded-lg p-2 font-semibold" required />
-                      <input type="number" step="0.10" placeholder="Uurloon (€)" value={empWage} onChange={e => setEmpWage(e.target.value)} className="bg-white border rounded-lg p-2 font-semibold" required />
+                    <div className="flex gap-2">
+                      <input type="text" placeholder="Naam werkgever / klant" value={empName} onChange={e => setEmpName(e.target.value)} className="flex-1 bg-white border rounded-lg p-2 font-semibold" required />
+                      <button type="submit" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 rounded-lg">Opslaan</button>
                     </div>
-                    <button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-1.5 rounded-lg">Opslaan</button>
                   </form>
 
                   <div className="space-y-2">
@@ -1058,13 +1030,13 @@
                       <div key={emp.id} className="p-2.5 bg-slate-50 border rounded-xl flex items-center justify-between">
                         <div>
                           <span className="font-bold text-slate-800">{emp.name}</span>
-                          <p className="text-[11px] text-slate-500">€{emp.hourlyWage.toFixed(2)} / uur {emp.isDefault && '· Standaard'}</p>
+                          {emp.isDefault && <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Standaard</span>}
                         </div>
                         <div className="flex items-center gap-1">
                           {!emp.isDefault && (
                             <button onClick={() => onSetDefaultEmployer(emp.id)} className="text-[10px] font-bold bg-white border px-2 py-1 rounded">Standaard</button>
                           )}
-                          <button onClick={() => { setEditingEmpId(emp.id); setEmpName(emp.name); setEmpWage(emp.hourlyWage.toString()); }} className="p-1 text-slate-400 hover:text-slate-700"><IconEdit className="w-4 h-4" /></button>
+                          <button onClick={() => { setEditingEmpId(emp.id); setEmpName(emp.name); }} className="p-1 text-slate-400 hover:text-slate-700"><IconEdit className="w-4 h-4" /></button>
                           <button onClick={() => onDeleteEmployer(emp.id)} className="p-1 text-slate-400 hover:text-rose-600"><IconTrash className="w-4 h-4" /></button>
                         </div>
                       </div>
@@ -1080,11 +1052,7 @@
                     <label className="block font-bold">Standaard Pauze (minuten)</label>
                     <input type="number" value={breakMins} onChange={e => setBreakMins(parseInt(e.target.value) || 0)} className="w-full bg-white border rounded-lg p-2 font-semibold" />
                   </div>
-                  <div className="space-y-2 bg-slate-50 p-3 rounded-xl border">
-                    <label className="block font-bold">Valuta Symbool</label>
-                    <input type="text" value={currency} onChange={e => setCurrency(e.target.value)} className="w-full bg-white border rounded-lg p-2 font-semibold" />
-                  </div>
-                  <button onClick={() => onSaveSettings({ ...settings, defaultBreakMinutes: breakMins, currencySymbol: currency })} className="w-full bg-emerald-500 text-white font-bold py-2 rounded-xl">Parameters Opslaan</button>
+                  <button onClick={() => onSaveSettings({ ...settings, defaultBreakMinutes: breakMins })} className="w-full bg-emerald-500 text-white font-bold py-2 rounded-xl">Parameters Opslaan</button>
                 </div>
               )}
 
@@ -1162,13 +1130,13 @@
                       <span>Privacy & AVG (GDPR) Garantie</span>
                     </div>
                     <p className="text-[11px] text-slate-300 leading-relaxed">
-                      Alle geregistreerde uren, tarieven en instellingen worden <strong>100% lokaal in jouw eigen browser (LocalStorage)</strong> opgeslagen. Er worden geen analytische cookies of gegevens naar externe servers verstuurd.
+                      Alle geregistreerde uren en instellingen worden <strong>100% lokaal in jouw eigen browser (LocalStorage)</strong> opgeslagen. Er worden geen analytische cookies of gegevens naar externe servers verstuurd.
                     </p>
                   </div>
 
                   {/* Export & Restore Options */}
                   <div className="bg-slate-50 border p-3 rounded-xl space-y-2">
-                    <p className="font-bold text-slate-800">Back-up & Herstel (JSON Data Portability)</p>
+                    <p className="font-bold text-slate-800">Back-up & Herstel (JSON / Excel Data)</p>
                     <div className="grid grid-cols-1 gap-2">
                       <button
                         onClick={() => exportToExcel(shifts, employers)}
@@ -1213,7 +1181,7 @@
                       <span>Data Beheer & Verwijdering</span>
                     </div>
                     <p className="text-[11px] text-rose-700">
-                      Wil je een schone start maken of al je persoonsgegevens uit de browser wissen?
+                      Wil je een schone start maken of al je gegevens uit de browser wissen?
                     </p>
                     <button
                       onClick={() => setShowConfirmWipe(true)}
