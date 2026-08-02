@@ -1,0 +1,6 @@
+{
+  "name": "Uren & Diensten Tracker",
+  "description": "Mobiele web-app voor het bijhouden van gewerkte uren, diensten, geannuleerde diensten en loon per werkgever.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
